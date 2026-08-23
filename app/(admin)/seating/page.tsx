@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { SeatingBoard, type SeatingData } from "./seating-board";
+import { SeatingScreen, type SeatingData } from "./seating-screen";
 
 export const dynamic = "force-dynamic";
 
@@ -38,5 +38,5 @@ export default async function SeatingPage() {
     ),
   };
 
-  return <SeatingBoard data={data} />;
+  return <SeatingScreen data={data} />;
 }

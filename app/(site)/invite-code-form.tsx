@@ -25,11 +25,11 @@ export function InviteCodeForm() {
         onChange={(e) => setCode(e.target.value)}
         placeholder="Paste your invitation link or code"
         aria-label="Your invitation code"
-        className="flex-1 rounded-full border border-white/15 bg-white/[0.04] px-5 py-3 text-[15px] text-[#e9e2d6] outline-none transition placeholder:text-white/30 focus:border-[#c9a46a]/60"
+        className="flex-1 rounded-full border border-white/15 bg-white/[0.04] px-5 py-3 text-[15px] text-[var(--ink)] outline-none transition placeholder:text-white/30 focus:border-[var(--gold)]/60"
       />
       <button
         type="submit"
-        className="rounded-full bg-[#c9a46a] px-7 py-3 text-[13px] font-medium uppercase tracking-[0.16em] text-[#12161b] transition hover:bg-[#d8b681]"
+        className="rounded-full bg-[var(--gold)] px-7 py-3 text-[13px] font-medium uppercase tracking-[0.16em] text-[var(--card)] transition hover:bg-[var(--gold-bright)]"
       >
         Open
       </button>

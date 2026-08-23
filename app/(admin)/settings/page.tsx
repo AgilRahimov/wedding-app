@@ -1,12 +1,11 @@
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/session";
+import { inputCls as input } from "@/components/ui";
 import { saveEventInfo } from "./actions";
 import { AdminsPanel } from "./admins-panel";
 
 export const dynamic = "force-dynamic";
 
-const input =
-  "rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-200";
 
 function Field({
   label,

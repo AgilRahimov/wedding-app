@@ -32,13 +32,13 @@ function Section({
   return (
     <section className={`mx-auto w-full max-w-4xl px-6 py-16 sm:py-20 ${className}`}>
       {eyebrow && (
-        <p className="text-center text-[11px] uppercase tracking-[0.28em] text-[#c9a46a]/80">
+        <p className="text-center text-[11px] uppercase tracking-[0.28em] text-[var(--gold)]/80">
           {eyebrow}
         </p>
       )}
       {title && (
         <h2
-          className="mt-3 text-center text-3xl font-light tracking-tight text-[#f0e9dd] sm:text-4xl"
+          className="mt-3 text-center text-3xl font-light tracking-tight text-[var(--ink-strong)] sm:text-4xl"
           style={{ fontFamily: "var(--font-display), serif", textWrap: "balance" }}
         >
           {title}
@@ -82,11 +82,11 @@ export default async function HomePage() {
           }}
         />
         <div className="relative mx-auto flex min-h-[88vh] w-full max-w-4xl flex-col items-center justify-center px-6 py-24 text-center">
-          <p className="text-[11px] uppercase tracking-[0.34em] text-[#c9a46a]/85">
+          <p className="text-[11px] uppercase tracking-[0.34em] text-[var(--gold)]/85">
             Together with our families
           </p>
           <h1
-            className="mt-7 text-[15vw] font-light leading-[0.95] tracking-tight text-[#f4eee3] sm:text-7xl md:text-8xl"
+            className="mt-7 text-[15vw] font-light leading-[0.95] tracking-tight text-[var(--ink-strong)] sm:text-7xl md:text-8xl"
             style={{ fontFamily: "var(--font-display), serif", textWrap: "balance" }}
           >
             {info.coupleNames || "Our Wedding"}
@@ -95,11 +95,11 @@ export default async function HomePage() {
           <Ornament className="mt-9" />
 
           <div className="mt-9 flex flex-col items-center gap-2">
-            <p className="text-lg tracking-[0.06em] text-[#e9e2d6] sm:text-xl">
+            <p className="text-lg tracking-[0.06em] text-[var(--ink)] sm:text-xl">
               {info.weddingDate}
               {info.ceremonyTime && ` · ${info.ceremonyTime}`}
             </p>
-            <p className="text-sm uppercase tracking-[0.2em] text-[#c9a46a]/80">
+            <p className="text-sm uppercase tracking-[0.2em] text-[var(--gold)]/80">
               {info.venueName}
               {info.venueAddress && info.venueName ? " · Baku" : ""}
             </p>
@@ -129,12 +129,12 @@ export default async function HomePage() {
               sub: "October evenings in Baku are mild — bring a light layer",
             },
           ].map((d) => (
-            <div key={d.label} className="bg-[#0d1217] p-7 text-center">
-              <p className="text-[10px] uppercase tracking-[0.24em] text-[#c9a46a]/75">
+            <div key={d.label} className="bg-[var(--card)] p-7 text-center">
+              <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--gold)]/75">
                 {d.label}
               </p>
               <p
-                className="mt-3 text-2xl font-light text-[#f0e9dd]"
+                className="mt-3 text-2xl font-light text-[var(--ink-strong)]"
                 style={{ fontFamily: "var(--font-display), serif" }}
               >
                 {d.value}
@@ -146,7 +146,7 @@ export default async function HomePage() {
 
         <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center">
           <p
-            className="text-2xl font-light text-[#f0e9dd]"
+            className="text-2xl font-light text-[var(--ink-strong)]"
             style={{ fontFamily: "var(--font-display), serif" }}
           >
             {info.venueName}
@@ -159,7 +159,7 @@ export default async function HomePage() {
               href={info.mapUrl}
               target="_blank"
               rel="noreferrer"
-              className="mt-5 inline-block rounded-full border border-[#c9a46a]/50 px-6 py-2.5 text-[12px] uppercase tracking-[0.16em] text-[#c9a46a] transition hover:bg-[#c9a46a]/10"
+              className="mt-5 inline-block rounded-full border border-[var(--gold)]/50 px-6 py-2.5 text-[12px] uppercase tracking-[0.16em] text-[var(--gold)] transition hover:bg-[var(--gold)]/10"
             >
               Open in maps
             </a>
@@ -183,12 +183,12 @@ export default async function HomePage() {
                 key={item.id}
                 className="grid grid-cols-[80px_1fr] gap-5 border-t border-white/10 py-5 first:border-t-0 sm:grid-cols-[110px_1fr]"
               >
-                <span className="pt-1 text-[13px] tabular-nums tracking-[0.1em] text-[#c9a46a]">
+                <span className="pt-1 text-[13px] tabular-nums tracking-[0.1em] text-[var(--gold)]">
                   {item.time}
                 </span>
                 <span>
                   <span
-                    className="block text-xl font-light text-[#f0e9dd]"
+                    className="block text-xl font-light text-[var(--ink-strong)]"
                     style={{ fontFamily: "var(--font-display), serif" }}
                   >
                     {item.title}
@@ -229,7 +229,7 @@ export default async function HomePage() {
               className="rounded-2xl border border-white/10 bg-white/[0.03] p-7"
             >
               <h3
-                className="text-xl font-light text-[#f0e9dd]"
+                className="text-xl font-light text-[var(--ink-strong)]"
                 style={{ fontFamily: "var(--font-display), serif" }}
               >
                 {c.h}
@@ -251,7 +251,7 @@ export default async function HomePage() {
                 const body = rest.join(" — ");
                 return (
                   <div key={i} className="border-t border-white/10 py-5 first:border-t-0">
-                    <p className="text-[15px] text-[#f0e9dd]">{head}</p>
+                    <p className="text-[15px] text-[var(--ink-strong)]">{head}</p>
                     {body && (
                       <p className="mt-1 text-[14px] leading-relaxed text-white/45">{body}</p>
                     )}
@@ -265,12 +265,12 @@ export default async function HomePage() {
 
       {/* Find your invitation */}
       <Section className="!py-20">
-        <div className="rounded-3xl border border-[#c9a46a]/25 bg-gradient-to-b from-[#c9a46a]/[0.09] to-transparent p-9 text-center sm:p-12">
-          <p className="text-[11px] uppercase tracking-[0.28em] text-[#c9a46a]/85">
+        <div className="rounded-3xl border border-[var(--gold)]/25 bg-gradient-to-b from-[var(--gold)]/[0.09] to-transparent p-9 text-center sm:p-12">
+          <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--gold)]/85">
             Your invitation
           </p>
           <h2
-            className="mt-4 text-3xl font-light text-[#f4eee3] sm:text-4xl"
+            className="mt-4 text-3xl font-light text-[var(--ink-strong)] sm:text-4xl"
             style={{ fontFamily: "var(--font-display), serif" }}
           >
             Find your table and your plan
@@ -290,7 +290,7 @@ export default async function HomePage() {
         <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-4 px-6 py-12 text-center">
           <Ornament />
           <p
-            className="mt-2 text-2xl font-light text-[#f0e9dd]"
+            className="mt-2 text-2xl font-light text-[var(--ink-strong)]"
             style={{ fontFamily: "var(--font-display), serif" }}
           >
             {info.coupleNames || "Our Wedding"}

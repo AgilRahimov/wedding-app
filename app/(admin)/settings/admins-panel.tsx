@@ -1,26 +1,13 @@
 "use client";
 
 import { useActionState, useTransition } from "react";
+import { Feedback as SharedFeedback, inputCls as input } from "@/components/ui";
 import { addAdmin, changePassword, removeAdmin, type FormState } from "./actions";
 
-const input =
-  "rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-200";
+const Feedback = ({ state }: { state: FormState }) => (
+  <SharedFeedback error={state.error} ok={state.ok} />
+);
 
-function Feedback({ state }: { state: FormState }) {
-  if (state.error)
-    return (
-      <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
-        {state.error}
-      </p>
-    );
-  if (state.ok)
-    return (
-      <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-        {state.ok}
-      </p>
-    );
-  return null;
-}
 
 export function AdminsPanel({
   admins,

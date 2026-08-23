@@ -6,7 +6,7 @@ import { submitRsvp, type RsvpMember, type RsvpResult } from "./actions";
 type FormMember = RsvpMember & { nameEditable: boolean };
 
 const field =
-  "w-full rounded-xl border border-white/15 bg-white/[0.05] px-4 py-2.5 text-[15px] text-[#f0e9dd] outline-none transition placeholder:text-white/25 focus:border-[#c9a46a]/60";
+  "w-full rounded-xl border border-white/15 bg-white/[0.05] px-4 py-2.5 text-[15px] text-[var(--ink-strong)] outline-none transition placeholder:text-white/25 focus:border-[var(--gold)]/60";
 
 export function RsvpForm({
   token,
@@ -66,7 +66,7 @@ export function RsvpForm({
                 />
               ) : (
                 <p
-                  className="text-xl font-light text-[#f0e9dd]"
+                  className="text-xl font-light text-[var(--ink-strong)]"
                   style={{ fontFamily: "var(--font-display), serif" }}
                 >
                   {m.name}
@@ -103,8 +103,8 @@ export function RsvpForm({
                 onClick={() => setMember(i, { attending: "yes" })}
                 className={`flex-1 rounded-xl border px-3 py-2.5 text-[13px] uppercase tracking-[0.12em] transition ${
                   m.attending === "yes"
-                    ? "border-[#c9a46a] bg-[#c9a46a] text-[#12161b]"
-                    : "border-white/15 text-white/55 hover:border-[#c9a46a]/50 hover:text-white/80"
+                    ? "border-[var(--gold)] bg-[var(--gold)] text-[var(--card)]"
+                    : "border-white/15 text-white/55 hover:border-[var(--gold)]/50 hover:text-white/80"
                 }`}
               >
                 Joyfully accepts
@@ -114,7 +114,7 @@ export function RsvpForm({
                 onClick={() => setMember(i, { attending: "no" })}
                 className={`flex-1 rounded-xl border px-3 py-2.5 text-[13px] uppercase tracking-[0.12em] transition ${
                   m.attending === "no"
-                    ? "border-white/50 bg-white/15 text-[#f0e9dd]"
+                    ? "border-white/50 bg-white/15 text-[var(--ink-strong)]"
                     : "border-white/15 text-white/55 hover:border-white/35 hover:text-white/80"
                 }`}
               >
@@ -127,7 +127,7 @@ export function RsvpForm({
 
       <button
         type="button"
-        className="self-start text-[13px] uppercase tracking-[0.14em] text-[#c9a46a] transition hover:text-[#dcbc86]"
+        className="self-start text-[13px] uppercase tracking-[0.14em] text-[var(--gold)] transition hover:text-[var(--gold-bright)]"
         onClick={() =>
           setMembers([
             ...members,
@@ -177,7 +177,7 @@ export function RsvpForm({
         type="button"
         onClick={submit}
         disabled={isPending}
-        className="rounded-xl bg-[#c9a46a] px-5 py-3.5 text-[13px] font-medium uppercase tracking-[0.16em] text-[#12161b] transition hover:bg-[#d8b681] disabled:opacity-50"
+        className="rounded-xl bg-[var(--gold)] px-5 py-3.5 text-[13px] font-medium uppercase tracking-[0.16em] text-[var(--card)] transition hover:bg-[var(--gold-bright)] disabled:opacity-50"
       >
         {isPending ? "Sending…" : "Send our reply"}
       </button>

@@ -20,9 +20,21 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
     <>
       {/* The page itself must be dark, not just this wrapper: otherwise the
           light admin background shows through when a phone over-scrolls. */}
-      <style>{`body { background: #0b0f13; }`}</style>
+      {/* The guest-side palette, in one place. Change a color here and every
+          guest page follows — the pages reference only these variables. */}
+      <style>{`
+        :root {
+          --paper: #0b0f13;      /* page background — deep evening blue-black */
+          --card: #12161b;       /* dark text on gold buttons */
+          --ink: #e9e2d6;        /* body text — warm off-white */
+          --ink-strong: #f4eee3; /* headings */
+          --gold: #c9a46a;       /* the accent — brass/gold */
+          --gold-bright: #d8b681;/* gold hover states */
+        }
+        body { background: var(--paper); }
+      `}</style>
       <div
-        className={`${display.variable} ${body.variable} min-h-screen bg-[#0b0f13] text-[#e9e2d6]`}
+        className={`${display.variable} ${body.variable} min-h-screen bg-[var(--paper)] text-[var(--ink)]`}
         style={{ fontFamily: "var(--font-body), system-ui, sans-serif" }}
       >
         {children}

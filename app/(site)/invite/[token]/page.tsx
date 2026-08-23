@@ -26,10 +26,10 @@ function Card({
 }) {
   return (
     <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 sm:p-7">
-      <p className="text-[10px] uppercase tracking-[0.26em] text-[#c9a46a]/80">{eyebrow}</p>
+      <p className="text-[10px] uppercase tracking-[0.26em] text-[var(--gold)]/80">{eyebrow}</p>
       {title && (
         <h2
-          className="mt-2 text-2xl font-light text-[#f0e9dd]"
+          className="mt-2 text-2xl font-light text-[var(--ink-strong)]"
           style={{ fontFamily: "var(--font-display), serif" }}
         >
           {title}
@@ -114,27 +114,27 @@ export default async function InvitePage({
     <main className="mx-auto w-full max-w-2xl px-5 pb-20 pt-14">
       {/* Greeting */}
       <header className="text-center">
-        <p className="text-[10px] uppercase tracking-[0.32em] text-[#c9a46a]/85">
+        <p className="text-[10px] uppercase tracking-[0.32em] text-[var(--gold)]/85">
           You are invited
         </p>
         <h1
-          className="mt-6 text-5xl font-light leading-[1] tracking-tight text-[#f4eee3] sm:text-6xl"
+          className="mt-6 text-5xl font-light leading-[1] tracking-tight text-[var(--ink-strong)] sm:text-6xl"
           style={{ fontFamily: "var(--font-display), serif", textWrap: "balance" }}
         >
           {info.coupleNames || "Our Wedding"}
         </h1>
-        <p className="mt-5 text-[15px] tracking-[0.05em] text-[#e9e2d6]">
+        <p className="mt-5 text-[15px] tracking-[0.05em] text-[var(--ink)]">
           {info.weddingDate}
           {info.ceremonyTime && ` · ${info.ceremonyTime}`}
         </p>
-        <p className="mt-1 text-[12px] uppercase tracking-[0.2em] text-[#c9a46a]/75">
+        <p className="mt-1 text-[12px] uppercase tracking-[0.2em] text-[var(--gold)]/75">
           {info.venueName}
         </p>
 
         <Ornament className="mt-8" />
 
-        <p className="mt-8 text-[17px] text-[#e9e2d6]">
-          Dear <span className="text-[#f4eee3]">{household.name}</span>
+        <p className="mt-8 text-[17px] text-[var(--ink)]">
+          Dear <span className="text-[var(--ink-strong)]">{household.name}</span>
           {household.guests.length > 1 ? " and family" : ""},
         </p>
         {info.welcomeText && (
@@ -186,12 +186,12 @@ export default async function InvitePage({
                   key={item.id}
                   className="grid grid-cols-[78px_1fr] gap-4 border-t border-white/10 py-4 first:border-t-0 first:pt-0 sm:grid-cols-[104px_1fr]"
                 >
-                  <span className="pt-0.5 text-[12.5px] tabular-nums tracking-[0.08em] text-[#c9a46a]">
+                  <span className="pt-0.5 text-[12.5px] tabular-nums tracking-[0.08em] text-[var(--gold)]">
                     {item.time}
                   </span>
                   <span>
                     <span
-                      className="block text-lg font-light leading-snug text-[#f0e9dd]"
+                      className="block text-lg font-light leading-snug text-[var(--ink-strong)]"
                       style={{ fontFamily: "var(--font-display), serif" }}
                     >
                       {item.title}
@@ -226,7 +226,7 @@ export default async function InvitePage({
                     <dt className="text-[12px] uppercase tracking-[0.13em] text-white/35">
                       {t.label}
                     </dt>
-                    <dd className="text-[15px] text-[#e9e2d6]">{t.value}</dd>
+                    <dd className="text-[15px] text-[var(--ink)]">{t.value}</dd>
                   </div>
                 ))}
               </dl>
@@ -238,7 +238,7 @@ export default async function InvitePage({
               </p>
             )}
             {household.travelNotes && (
-              <p className="mt-4 rounded-xl border border-[#c9a46a]/20 bg-[#c9a46a]/[0.07] px-4 py-3 text-[14px] text-[#e9e2d6]">
+              <p className="mt-4 rounded-xl border border-[var(--gold)]/20 bg-[var(--gold)]/[0.07] px-4 py-3 text-[14px] text-[var(--ink)]">
                 {household.travelNotes}
               </p>
             )}
@@ -259,7 +259,7 @@ export default async function InvitePage({
               href={info.mapUrl}
               target="_blank"
               rel="noreferrer"
-              className="mt-5 inline-block rounded-full border border-[#c9a46a]/50 px-6 py-2.5 text-[12px] uppercase tracking-[0.16em] text-[#c9a46a] transition hover:bg-[#c9a46a]/10"
+              className="mt-5 inline-block rounded-full border border-[var(--gold)]/50 px-6 py-2.5 text-[12px] uppercase tracking-[0.16em] text-[var(--gold)] transition hover:bg-[var(--gold)]/10"
             >
               Open in maps
             </a>
@@ -278,8 +278,8 @@ export default async function InvitePage({
         )}
 
         {/* RSVP */}
-        <section className="rounded-2xl border border-[#c9a46a]/30 bg-gradient-to-b from-[#c9a46a]/[0.08] to-transparent p-6 sm:p-7">
-          <p className="text-[10px] uppercase tracking-[0.26em] text-[#c9a46a]/85">
+        <section className="rounded-2xl border border-[var(--gold)]/30 bg-gradient-to-b from-[var(--gold)]/[0.08] to-transparent p-6 sm:p-7">
+          <p className="text-[10px] uppercase tracking-[0.26em] text-[var(--gold)]/85">
             Will you join us?
           </p>
           {info.rsvpDeadline && !closed && (

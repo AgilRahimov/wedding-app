@@ -1,17 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { btnGhost, btnPrimary, inputCls, RsvpDot } from "@/components/ui";
 import { VenueMap } from "@/components/venue-map";
-import {
-  addTable,
-  assignGuest,
-  clearTable,
-  deleteTable,
-  freeDeclinedSeats,
-  moveTable,
-  seatParty,
-  updateTable,
-} from "./actions";
+import { assignGuest, freeDeclinedSeats, moveTable } from "./actions";
+import { AddTablePanel } from "./add-table-panel";
+import { TablePanel } from "./table-panel";
 
 export type SeatingGuest = {
   id: string;
@@ -30,28 +24,7 @@ export type SeatingData = {
   guests: SeatingGuest[];
 };
 
-const input =
-  "rounded-lg border border-stone-300 bg-white px-2.5 py-1.5 text-sm text-stone-900 outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-200";
-const btn = "rounded-lg px-3 py-1.5 text-sm font-medium transition disabled:opacity-50";
-const btnPrimary = `${btn} bg-rose-700 text-white hover:bg-rose-800`;
-const btnGhost = `${btn} border border-stone-300 text-stone-600 hover:bg-stone-100`;
-
-/** A small coloured dot standing in for a reply, so the lists stay compact. */
-function RsvpDot({ rsvp }: { rsvp: string }) {
-  const tone =
-    rsvp === "yes" ? "bg-emerald-500" : rsvp === "no" ? "bg-rose-500" : "bg-amber-400";
-  const label =
-    rsvp === "yes" ? "Coming" : rsvp === "no" ? "Has declined" : "Awaiting reply";
-  return (
-    <span
-      className={`inline-block h-2 w-2 shrink-0 rounded-full ${tone}`}
-      title={label}
-      aria-label={label}
-    />
-  );
-}
-
-export function SeatingBoard({ data }: { data: SeatingData }) {
+export function SeatingScreen({ data }: { data: SeatingData }) {
   const [selectedGuestId, setSelectedGuestId] = useState<string | null>(null);
   const [openTableId, setOpenTableId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -306,13 +279,13 @@ export function SeatingBoard({ data }: { data: SeatingData }) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search a name…"
-                className={`${input} w-full`}
+                className={`${inputCls} w-full`}
               />
               <div className="flex gap-2">
                 <select
                   value={groupFilter}
                   onChange={(e) => setGroupFilter(e.target.value)}
-                  className={`${input} min-w-0 flex-1`}
+                  className={`${inputCls} min-w-0 flex-1`}
                 >
                   <option value="all">All groups</option>
                   {groups.map((g) => (
@@ -324,7 +297,7 @@ export function SeatingBoard({ data }: { data: SeatingData }) {
                 <select
                   value={rsvpFilter}
                   onChange={(e) => setRsvpFilter(e.target.value)}
-                  className={`${input} min-w-0 flex-1`}
+                  className={`${inputCls} min-w-0 flex-1`}
                 >
                   <option value="active">Coming or awaiting</option>
                   <option value="yes">Coming</option>
@@ -376,203 +349,5 @@ export function SeatingBoard({ data }: { data: SeatingData }) {
         </div>
       </div>
     </div>
-  );
-}
-
-function TablePanel({
-  table,
-  guests,
-  selectedGuest,
-  partyMatesToSeat,
-  onClose,
-  run,
-}: {
-  table: { id: string; name: string; capacity: number; seated: number };
-  guests: SeatingGuest[];
-  selectedGuest: SeatingGuest | null;
-  partyMatesToSeat: SeatingGuest[];
-  onClose: () => void;
-  run: (fn: () => Promise<unknown>) => void;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(table.name);
-  const [capacity, setCapacity] = useState(String(table.capacity));
-
-  useEffect(() => {
-    setName(table.name);
-    setCapacity(String(table.capacity));
-    setEditing(false);
-  }, [table.id, table.name, table.capacity]);
-
-  const confirmed = guests.filter((g) => g.rsvp === "yes").length;
-  const declined = guests.filter((g) => g.rsvp === "no").length;
-
-  return (
-    <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-      <div className="flex items-baseline justify-between gap-2">
-        <h2 className="font-medium">{table.name}</h2>
-        <button className="text-sm text-stone-400 hover:underline" onClick={onClose}>
-          close
-        </button>
-      </div>
-      <p className="mt-0.5 text-sm text-stone-500">
-        {table.seated} of {table.capacity} seats taken
-      </p>
-      {guests.length > 0 && (
-        <p className="text-xs text-stone-400">
-          {confirmed} confirmed{declined > 0 && ` · ${declined} declined`}
-        </p>
-      )}
-
-      {selectedGuest && partyMatesToSeat.length > 1 && (
-        <button
-          className={`${btnGhost} mt-3 w-full`}
-          onClick={() => run(() => seatParty(selectedGuest.householdId, table.id))}
-        >
-          Seat all {partyMatesToSeat.length} of {selectedGuest.party} here
-        </button>
-      )}
-
-      <ul className="mt-3 flex flex-col gap-1">
-        {guests.length === 0 && (
-          <li className="py-3 text-sm text-stone-400">Nobody seated here yet.</li>
-        )}
-        {guests.map((g) => (
-          <li
-            key={g.id}
-            className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-1.5 text-sm ${
-              g.rsvp === "no" ? "border-amber-200 bg-amber-50" : "border-stone-100"
-            }`}
-          >
-            <span className="flex items-center gap-2">
-              <RsvpDot rsvp={g.rsvp} />
-              <span>
-                <span
-                  className={`font-medium ${g.rsvp === "no" ? "text-stone-500 line-through" : ""}`}
-                >
-                  {g.isChild ? "🧒 " : ""}
-                  {g.name}
-                </span>
-                <span className="block text-xs text-stone-500">{g.party}</span>
-              </span>
-            </span>
-            <button
-              className="text-xs text-rose-600 hover:underline"
-              onClick={() => run(() => assignGuest(g.id, null))}
-            >
-              remove
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      {editing ? (
-        <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-stone-100 pt-3">
-          <label className="flex flex-col gap-1 text-xs text-stone-600">
-            Name
-            <input className={`${input} w-32`} value={name} onChange={(e) => setName(e.target.value)} />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-stone-600">
-            Seats
-            <input
-              type="number"
-              min={1}
-              max={40}
-              className={`${input} w-16`}
-              value={capacity}
-              onChange={(e) => setCapacity(e.target.value)}
-            />
-          </label>
-          <button
-            className={btnPrimary}
-            onClick={() =>
-              run(async () => {
-                await updateTable(table.id, { name, capacity: Number(capacity) });
-                setEditing(false);
-              })
-            }
-          >
-            Save
-          </button>
-          <button className={btnGhost} onClick={() => setEditing(false)}>
-            Cancel
-          </button>
-        </div>
-      ) : (
-        <div className="mt-4 flex flex-wrap gap-3 border-t border-stone-100 pt-3 text-sm">
-          <button className="text-stone-600 hover:underline" onClick={() => setEditing(true)}>
-            Rename / resize
-          </button>
-          {guests.length > 0 && (
-            <button
-              className="text-stone-600 hover:underline"
-              onClick={() => run(() => clearTable(table.id))}
-            >
-              Empty table
-            </button>
-          )}
-          <button
-            className="text-rose-600 hover:underline"
-            onClick={() => {
-              if (!confirm(`Delete ${table.name}? Anyone seated there becomes unseated.`)) return;
-              run(async () => {
-                await deleteTable(table.id);
-                onClose();
-              });
-            }}
-          >
-            Delete table
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function AddTablePanel({ onDone }: { onDone: () => void }) {
-  const [isPending, startTransition] = useTransition();
-
-  function submit(formData: FormData) {
-    startTransition(async () => {
-      try {
-        await addTable(
-          String(formData.get("name") ?? ""),
-          Number(formData.get("capacity") ?? 10),
-          String(formData.get("shape") ?? "round")
-        );
-        onDone();
-      } catch (e) {
-        alert(e instanceof Error ? e.message : "Could not add the table");
-      }
-    });
-  }
-
-  return (
-    <form
-      action={submit}
-      className="flex flex-wrap items-end gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm"
-    >
-      <label className="flex flex-col gap-1 text-xs font-medium text-stone-600">
-        Table name
-        <input name="name" required defaultValue="Table" className={`${input} w-40`} />
-      </label>
-      <label className="flex flex-col gap-1 text-xs font-medium text-stone-600">
-        Seats
-        <input name="capacity" type="number" min={1} max={40} defaultValue={10} className={`${input} w-20`} />
-      </label>
-      <label className="flex flex-col gap-1 text-xs font-medium text-stone-600">
-        Shape
-        <select name="shape" className={input} defaultValue="round">
-          <option value="round">Round</option>
-          <option value="long">Long</option>
-        </select>
-      </label>
-      <button className={btnPrimary} disabled={isPending}>
-        {isPending ? "Adding…" : "Add"}
-      </button>
-      <button type="button" className={btnGhost} onClick={onDone}>
-        Close
-      </button>
-    </form>
   );
 }

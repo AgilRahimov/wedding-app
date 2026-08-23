@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { btnGhost, btnPrimary, inputCls as input } from "@/components/ui";
 import {
   addProgramme,
   deleteProgramme,
@@ -20,11 +21,6 @@ export type ProgrammeView = {
   items: ItemDraft[];
 };
 
-const input =
-  "rounded-lg border border-stone-300 bg-white px-2.5 py-1.5 text-sm text-stone-900 outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-200";
-const btn = "rounded-lg px-3 py-1.5 text-sm font-medium transition disabled:opacity-50";
-const btnPrimary = `${btn} bg-rose-700 text-white hover:bg-rose-800`;
-const btnGhost = `${btn} border border-stone-300 text-stone-600 hover:bg-stone-100`;
 
 export function ProgrammesEditor({ programmes }: { programmes: ProgrammeView[] }) {
   const [openId, setOpenId] = useState<string | null>(programmes[0]?.id ?? null);

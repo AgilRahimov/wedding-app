@@ -37,7 +37,7 @@ export function Countdown({ isoDate }: { isoDate: string }) {
   if (!parts) return <div className="h-[74px]" />;
   if (parts.length === 0)
     return (
-      <p className="font-[var(--font-display)] text-2xl text-[#c9a46a]">
+      <p className="font-[var(--font-display)] text-2xl text-[var(--gold)]">
         Today is the day.
       </p>
     );
@@ -47,12 +47,12 @@ export function Countdown({ isoDate }: { isoDate: string }) {
       {parts.map((p) => (
         <div key={p.label} className="text-center">
           <div
-            className="text-4xl font-light tabular-nums text-[#e9e2d6] sm:text-5xl"
+            className="text-4xl font-light tabular-nums text-[var(--ink)] sm:text-5xl"
             style={{ fontFamily: "var(--font-display), serif" }}
           >
             {p.value}
           </div>
-          <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-[#c9a46a]/70">
+          <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-[var(--gold)]/70">
             {p.label}
           </div>
         </div>

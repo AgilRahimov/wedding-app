@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+scripts/print-data.json
+
+# local data — guest names, phones and RSVPs never go into the code repo
+prisma/dev.db
+prisma/test.db
+backups/
+
+# test artifacts
+.next-test/
+test-results/
+playwright-report/

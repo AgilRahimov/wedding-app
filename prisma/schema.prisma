@@ -1,0 +1,171 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+// A household/party = the unit that receives one invite link.
+// Travel is tracked here because a party travels together;
+// per-person exceptions go in travelNotes.
+model Household {
+  id              String   @id @default(cuid())
+  token           String   @unique
+  name            String
+  group           String   @default("Ungrouped")
+  // Which side invited them: e.g. "Groom's family", "Bride's family", "Father's colleagues"
+  side            String?
+  via             String?
+  notes           String?
+  phone           String?
+  email           String?
+  address         String?
+  // Stamped when the party opens their invite link / submits the RSVP form
+  linkOpenedAt    DateTime?
+  respondedAt     DateTime?
+  // Free-text note the party leaves on the RSVP form
+  rsvpNote        String?
+  isInternational Boolean  @default(false)
+  arrivalDate     String?
+  arrivalDetails  String?
+  departureDate   String?
+  departureDetails String?
+  needsTransfer   Boolean  @default(false)
+  transferNotes   String?
+  hotelId         String?
+  hotel           Hotel?   @relation(fields: [hotelId], references: [id], onDelete: SetNull)
+  roomDetails     String?
+  travelNotes     String?
+  // Which version of the day this party experiences (see Programme).
+  programmeId     String?
+  programme       Programme? @relation(fields: [programmeId], references: [id], onDelete: SetNull)
+  guests          Guest[]
+  signups         ActivitySignup[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Guest {
+  id          String     @id @default(cuid())
+  householdId String
+  household   Household  @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name        String
+  isPlusOne   Boolean    @default(false)
+  // rsvp: pending | yes | no
+  rsvp        String     @default("pending")
+  // Children are counted separately from adults for catering
+  isChild     Boolean    @default(false)
+  age         Int?
+  notes       String?
+  tableId     String?
+  table       SeatTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model SeatTable {
+  id        String  @id @default(cuid())
+  name      String
+  capacity  Int     @default(10)
+  sortOrder Int     @default(0)
+  notes     String?
+  // Position on the venue floor plan, as a percentage of the room's
+  // width and height, so the plan scales to any screen size.
+  x         Float   @default(50)
+  y         Float   @default(50)
+  // round | long — how the table is drawn on the plan
+  shape     String  @default("round")
+  guests    Guest[]
+}
+
+// A version of the wedding day. Not every guest has the same one:
+// some gather at the groom's house in the afternoon and travel to the
+// venue together, others arrive at Buta Palace directly, and guests
+// flying in need the whole thing spelled out. Each party is assigned one
+// programme and sees only that timetable on their invitation page.
+model Programme {
+  id         String          @id @default(cuid())
+  // How the family refers to it in conversation: "A", "B", "C"
+  code       String          @unique
+  name       String
+  title      String
+  summary    String?
+  // Assigned to parties that have not been put in a programme yet
+  isDefault  Boolean         @default(false)
+  sortOrder  Int             @default(0)
+  items      ProgrammeItem[]
+  households Household[]
+}
+
+model ProgrammeItem {
+  id          String    @id @default(cuid())
+  programmeId String
+  programme   Programme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  // Free text, so "15:00" and "Early afternoon" both work
+  time        String
+  title       String
+  detail      String?
+  location    String?
+  sortOrder   Int       @default(0)
+}
+
+model Hotel {
+  id          String      @id @default(cuid())
+  name        String
+  address     String?
+  bookingInfo String?
+  notes       String?
+  households  Household[]
+}
+
+model Activity {
+  id          String           @id @default(cuid())
+  title       String
+  description String?
+  dateText    String?
+  location    String?
+  capacity    Int?
+  sortOrder   Int              @default(0)
+  signups     ActivitySignup[]
+}
+
+model ActivitySignup {
+  id          String    @id @default(cuid())
+  activityId  String
+  activity    Activity  @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  // status: interested | confirmed | declined
+  status      String    @default("interested")
+  people      Int       @default(1)
+  note        String?
+
+  @@unique([activityId, householdId])
+}
+
+// Single-row table (id = 1) holding everything the guest page shows.
+model EventInfo {
+  id            Int     @id @default(1)
+  coupleNames   String  @default("")
+  weddingDate   String  @default("")
+  ceremonyTime  String  @default("")
+  venueName     String  @default("")
+  venueAddress  String  @default("")
+  mapUrl        String  @default("")
+  dressCode     String  @default("")
+  schedule      String  @default("")
+  faq           String  @default("")
+  contactPhone  String  @default("")
+  rsvpDeadline  String  @default("")
+  welcomeText   String  @default("")
+}

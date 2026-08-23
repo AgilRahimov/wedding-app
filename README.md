@@ -27,7 +27,7 @@ This app replaces `Spisok v2.xlsx`.
   WhatsApp. Shows their table on the floor plan, their own programme, their travel
   details if they are coming from abroad, and their RSVP form.
 
-Still to come: hotels and airport transfers as a proper module, and activities/trips.
+**Project plan, phase statuses, decisions and open questions live in [ROADMAP.md](ROADMAP.md).**
 
 ## Running it
 

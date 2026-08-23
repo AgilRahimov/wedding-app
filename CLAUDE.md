@@ -4,8 +4,8 @@ Agil & Semra's wedding: **23 October 2026, 19:00, Buta Palace, Baku.**
 This app manages the guest list (234 parties / ~387 people), RSVPs via personal
 invite links, seating on a floor plan, and per-group day programmes.
 
-**Read `README.md` before changing anything** — it maps every screen, the data
-model, common tasks, and the "Adding a new screen" recipe. The owner, Agil, is
+**Read `README.md` (how it works) and `ROADMAP.md` (status, decisions, what's next)
+before changing anything — and keep ROADMAP.md updated as work lands.** The owner, Agil, is
 not a programmer: plan before building, ask before deciding product questions,
 keep the code boring and explicit (his standing requirement: "no black box").
 

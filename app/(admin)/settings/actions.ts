@@ -27,6 +27,7 @@ export async function saveEventInfo(formData: FormData) {
       contactPhone: field("contactPhone"),
       rsvpDeadline: field("rsvpDeadline"),
       welcomeText: field("welcomeText"),
+      travelInfo: field("travelInfo"),
     },
   });
   revalidatePath("/settings");

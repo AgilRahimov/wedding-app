@@ -207,23 +207,29 @@ export default async function HomePage() {
 
       <Ornament />
 
-      {/* Travelling in */}
+      {/* Travelling in — editable in Settings; these are the defaults */}
       <Section eyebrow="Coming from abroad" title="Travelling to Baku">
         <div className="mt-10 grid gap-6 sm:grid-cols-3">
-          {[
-            {
-              h: "Getting here",
-              p: "Heydar Aliyev International Airport is about 30 minutes from the city. Tell us your flight and we will arrange to meet you.",
-            },
-            {
-              h: "Where to stay",
-              p: "We are holding rooms at hotels near the venue. Your invitation page shows your hotel once it is booked.",
-            },
-            {
-              h: "While you're here",
-              p: "Late October is one of the best times to see Baku — warm days, cool evenings. We are planning something for guests who stay on after the wedding.",
-            },
-          ].map((c) => (
+          {(info.travelInfo
+            ? lines(info.travelInfo).map((l) => {
+                const [h, ...rest] = l.split(/\s+[—–-]\s+/);
+                return { h, p: rest.join(" — ") };
+              })
+            : [
+                {
+                  h: "Getting here",
+                  p: "Heydar Aliyev International Airport is about 30 minutes from the city. Tell us your flight and we will arrange to meet you.",
+                },
+                {
+                  h: "Where to stay",
+                  p: "We are holding rooms at hotels near the venue. Your invitation page shows your hotel once it is booked.",
+                },
+                {
+                  h: "While you're here",
+                  p: "Late October is one of the best times to see Baku — warm days, cool evenings. We are planning something for guests who stay on after the wedding.",
+                },
+              ]
+          ).map((c) => (
             <div
               key={c.h}
               className="rounded-2xl border border-white/10 bg-white/[0.03] p-7"

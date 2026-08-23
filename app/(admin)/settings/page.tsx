@@ -147,6 +147,12 @@ export default async function SettingsPage({
           defaultValue={info.faq}
           textarea
         />
+        <Field
+          label="Homepage travel section (one card per line: “Title — text”; leave empty for the built-in cards)"
+          name="travelInfo"
+          defaultValue={info.travelInfo}
+          textarea
+        />
         <div>
           <button className="rounded-lg bg-rose-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-rose-800">
             Save wedding details

@@ -47,14 +47,17 @@ Then open http://localhost:3000 and sign in. The first admin account is
 | `prisma/data/` | The original spreadsheet extraction (`guests.json`) and the script that made it |
 | `app/login/` | Sign-in screen |
 | `app/(admin)/dashboard/` | Dashboard screen |
-| `app/(admin)/guests/` | Guests screen + its server actions + Excel export |
-| `app/(admin)/seating/` | Seating screen (the floor plan) |
+| `app/(admin)/guests/` | Guests screen: `guests-screen` (list), `edit-panel`, `travel-fields`, `add-party-panel`, `groups-panel`, `actions.ts`, Excel export |
+| `app/(admin)/seating/` | Seating screen: `seating-screen` (plan + queue), `table-panel`, `add-table-panel`, `actions.ts` |
 | `app/(admin)/programmes/` | Programmes screen (the timetables) |
 | `app/(admin)/settings/` | Settings screen (wedding details, family accounts) |
 | `app/(site)/page.tsx` | The public wedding homepage |
 | `app/(site)/invite/[token]/` | A guest's personal invitation + RSVP |
 | `components/venue-map.tsx` | The floor plan, shared by the seating screen and guest pages |
-| `lib/db.ts`, `lib/session.ts` | The only shared plumbing: database client and login sessions |
+| `components/ui.tsx` | The admin screens' shared styles (inputs, buttons, RSVP pills) |
+| `lib/party.ts` | How a party travels from database to screen — types derived from the schema |
+| `lib/db.ts`, `lib/session.ts` | Database client and login sessions |
+| `tests/` | The smoke suite — `npm test` checks the whole app in ~30s on its own test database |
 
 The family's screens are light and plain; the guest-facing pages under `app/(site)/`
 have their own dark evening look, set once in `app/(site)/layout.tsx`.
@@ -64,7 +67,10 @@ Every screen folder contains its page, its components, and its `actions.ts`
 
 ## Common tasks
 
-- **Back up the data** — copy `prisma/dev.db` somewhere safe. That's it.
+- **Back up the data** — `npm run backup` (copies the database into `backups/` with
+  today's date). The guest data is deliberately NOT in git.
+- **Check nothing is broken after a change** — `npm test`. Ten browser tests run against
+  a scratch database in about half a minute. Green = the core flows all work.
 - **Look at the raw data** — `npx prisma studio` opens a spreadsheet-like view of every table.
 - **Add a family member who can sign in** — Settings → Family access.
 - **Re-import the spreadsheet from scratch** — delete `prisma/dev.db`, then
@@ -99,6 +105,22 @@ Every screen folder contains its page, its components, and its `actions.ts`
   (needs `pip3 install reportlab` once). Font sizes are the `NAME_SIZE` / `SUB_SIZE` /
   `HEAD_SIZE` numbers at the top of `scripts/print-guest-list.py`.
 
+## Adding a new screen (travel, activities…)
+
+Copy the pattern — every admin screen is a folder under `app/(admin)/` containing:
+
+| File | Role |
+|---|---|
+| `page.tsx` | Server component: fetches from the database, passes plain data down |
+| `<name>-screen.tsx` | `"use client"` component holding the screen's state and layout |
+| `actions.ts` | `"use server"` functions that change data — every one starts with `requireAdminAction()` and ends with `revalidatePath(...)` |
+| smaller `*.tsx` | Panels and pieces the screen imports — keep files under ~300 lines |
+
+Style inputs and buttons with the constants from `components/ui.tsx`. Add the screen to
+`app/(admin)/nav-links.tsx`, and give new database tables a commented model in
+`prisma/schema.prisma` (then `npx prisma migrate dev`). Finish by adding one or two
+smoke tests in `tests/`.
+
 ## Technology (for any developer who works on this later)
 
 Deliberately boring and mainstream: Next.js (App Router) + TypeScript, Prisma ORM,
@@ -115,6 +137,12 @@ the schema, ready for the travel and activities modules.
 
 Table positions on the floor plan are stored as percentages of the room (`x`, `y`), so
 the same plan renders correctly on a phone and on a laptop.
+
+## Version control
+
+The code lives in git (`git log` shows the history); the guest data does not — it stays
+in `prisma/dev.db`, which is git-ignored, plus dated copies in `backups/`. To push to
+GitHub: create a private repo, then `git remote add origin <url> && git push -u origin main`.
 
 ## Deployment
 

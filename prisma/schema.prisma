@@ -28,8 +28,6 @@ model Household {
   via             String?
   notes           String?
   phone           String?
-  email           String?
-  address         String?
   // Stamped when the party opens their invite link / submits the RSVP form
   linkOpenedAt    DateTime?
   respondedAt     DateTime?
@@ -168,4 +166,7 @@ model EventInfo {
   contactPhone  String  @default("")
   rsvpDeadline  String  @default("")
   welcomeText   String  @default("")
+  // Homepage "Travelling to Baku" cards, one per line: "Title — text".
+  // Empty means the built-in default cards are shown.
+  travelInfo    String  @default("")
 }

@@ -81,8 +81,13 @@ model SeatTable {
   // width and height, so the plan scales to any screen size.
   x         Float   @default(50)
   y         Float   @default(50)
-  // round | long — how the table is drawn on the plan
+  // round | half | oval | long — how the table is drawn on the plan.
+  // "half" is a half-round table (guests on the curve, flat side kept clear);
+  // "oval" is the big 18-seat table in each corner of the Buta Palace hall.
   shape     String  @default("round")
+  // Degrees, clockwise. Lets the corner ovals sit at an angle and decides
+  // which way a half-round table's flat side faces (0° = flat side on the right).
+  rotation  Float   @default(0)
   guests    Guest[]
 }
 

@@ -1,6 +1,6 @@
 # Wedding HQ
 
-Agil & Semra's wedding — **23 October 2026, 19:00, Buta Palace, Baku**.
+Agil & Samra's wedding — **23 October 2026, 19:00, Buta Palace, Baku**.
 This app replaces `Spisok v2.xlsx`.
 
 **The family's side** (sign-in required):
@@ -9,8 +9,10 @@ This app replaces `Spisok v2.xlsx`.
 - **Guests** — the full list (imported from the spreadsheet: 234 parties / 386 people),
   with search, filters, RSVP tracking, phone numbers, groups, Excel export, and travel
   details for anyone flying in. Tick several parties to move them all to a programme at once.
-- **Seating** — a floor plan of the room. Click a guest, then click a table to seat them;
-  "Move tables" lets you drag the plan into the real shape of the room.
+- **Seating** — the real Buta Palace floor plan (40 tables / 504 seats), with every
+  chair drawn on the map. Pick a party in the queue, then click its table — the whole
+  family is seated in one go (or open a party to seat people one by one). Pinch or use
+  the buttons to zoom; each table's panel can squeeze in a 13th/14th chair.
   **Everyone can be seated straight away, replied or not** — the family plans the room
   from what it knows, and reconciles against the replies later (see below).
 - **Programmes** — the different versions of the day. Not every guest has the same one:
@@ -92,14 +94,17 @@ Every screen folder contains its page, its components, and its `actions.ts`
   then "Move to programme". Everyone starts on Group B (straight to the venue).
 - **Change what a group is told** — Programmes → open a programme → edit the steps.
   Changes show on those guests' invitations immediately.
-- **Match the plan to the real room** — Seating → "Move tables", drag them, and they save
-  themselves. The room starts as 35 tables (a top table of 8 plus 34 rounds of 10 =
-  348 seats), laid out as five rows of six with a short row of four by the entrance.
-  The stage, dance floor and entrance are a placeholder drawn in
-  `components/venue-map.tsx`; we'll redraw them when Buta Palace sends the real plan.
-- **Seat a whole family in one go** — Seating → click any one of them, then click the
-  table: the panel offers "Seat all N of &lt;party&gt; here". Work through the list group by
-  group using the group filter — that's how seating actually gets done.
+- **Adjust the room** — Seating → "Move tables" drags tables around; each table's panel
+  has − / + to change its seats (extra chairs beyond the venue's standard 12 — 18 at the
+  ovals — show in amber), plus Rename, Rotate 45° and Delete. The room itself is the
+  venue's real plan: 28 rounds of 12, 8 half-rounds of 12 along the runway, 4 corner
+  ovals of 18, with Agil & Samra on the platform at the runway's end. The fixed room
+  furniture (stage, runway, platform, entrances) is drawn in `components/venue-map.tsx`;
+  the tables come from the database (starting layout in `lib/room-layout.ts`).
+- **Seat a whole family in one go** — Seating → click the party card, then click the
+  table on the plan. "seat one by one…" on the card splits a party across tables. Work
+  through the list group by group using the group filter — that's how seating actually
+  gets done.
 - **Reconcile seating with the replies** (do this near the reply deadline) — Seating shows
   a banner whenever someone holding a seat has since declined, an amber dot on the tables
   affected, and a "Free their seats" button that clears them all at once. The header keeps

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { btnGhost, btnPrimary, inputCls, RsvpDot } from "@/components/ui";
 import { VenueMap } from "@/components/venue-map";
-import { assignGuest, freeDeclinedSeats, moveTable } from "./actions";
+import { assignGuest, freeDeclinedSeats, moveTable, seatGuests } from "./actions";
 import { AddTablePanel } from "./add-table-panel";
 import { TablePanel } from "./table-panel";
 
@@ -20,12 +20,25 @@ export type SeatingGuest = {
 };
 
 export type SeatingData = {
-  tables: { id: string; name: string; capacity: number; x: number; y: number; shape: string }[];
+  tables: {
+    id: string;
+    name: string;
+    capacity: number;
+    x: number;
+    y: number;
+    shape: string;
+    rotation: number;
+  }[];
   guests: SeatingGuest[];
+  coupleNames: string;
 };
 
 export function SeatingScreen({ data }: { data: SeatingData }) {
+  // Families sit together, so the queue works in whole parties; a party can
+  // still be opened up to seat its people one by one when it must split.
+  const [selectedHouseholdId, setSelectedHouseholdId] = useState<string | null>(null);
   const [selectedGuestId, setSelectedGuestId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [openTableId, setOpenTableId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState("all");
@@ -73,6 +86,22 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
     });
   }, [data.guests, search, groupFilter, rsvpFilter]);
 
+  // The queue, party by party, in the order the guests already have.
+  const parties = useMemo(() => {
+    const map = new Map<string, SeatingGuest[]>();
+    for (const g of unseated) {
+      const list = map.get(g.householdId) ?? [];
+      list.push(g);
+      map.set(g.householdId, list);
+    }
+    return [...map.entries()].map(([householdId, members]) => ({
+      householdId,
+      party: members[0].party,
+      group: members[0].group,
+      members,
+    }));
+  }, [unseated]);
+
   // The reconciliation signal: people holding a seat who have since said no.
   const declinedSeated = useMemo(
     () => data.guests.filter((g) => g.tableId && g.rsvp === "no"),
@@ -98,6 +127,7 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
   const overfull = mapTables.filter((t) => t.seated > t.capacity);
   const shortOfSeats = data.guests.length - totalSeats;
 
+  const selectedParty = parties.find((p) => p.householdId === selectedHouseholdId) ?? null;
   const selectedGuest = data.guests.find((g) => g.id === selectedGuestId) ?? null;
   const openTable = mapTables.find((t) => t.id === openTableId) ?? null;
   const openTableGuests = openTableId ? (seatedByTable.get(openTableId) ?? []) : [];
@@ -116,14 +146,45 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
     });
   }
 
+  function clearSelection() {
+    setSelectedHouseholdId(null);
+    setSelectedGuestId(null);
+  }
+
   function handleTableClick(tableId: string) {
+    const table = mapTables.find((t) => t.id === tableId);
+    if (!table) return;
+    const free = table.capacity - table.seated;
+
+    if (selectedParty) {
+      const n = selectedParty.members.length;
+      if (
+        n > free &&
+        !confirm(
+          `${table.name} has ${Math.max(free, 0)} free ${free === 1 ? "seat" : "seats"} for ${n} people — seat them anyway? You can squeeze in an extra chair from the table's panel.`
+        )
+      )
+        return;
+      const ids = selectedParty.members.map((m) => m.id);
+      clearSelection();
+      setOpenTableId(tableId);
+      run(() => seatGuests(ids, tableId));
+      return;
+    }
+
     if (selectedGuest) {
+      if (
+        free < 1 &&
+        !confirm(`${table.name} is already full — seat ${selectedGuest.name} anyway?`)
+      )
+        return;
       const guestId = selectedGuest.id;
-      setSelectedGuestId(null);
+      clearSelection();
       setOpenTableId(tableId);
       run(() => assignGuest(guestId, tableId));
       return;
     }
+
     setOpenTableId((cur) => (cur === tableId ? null : tableId));
   }
 
@@ -157,7 +218,7 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
             className={editLayout ? btnPrimary : btnGhost}
             onClick={() => {
               setEditLayout((v) => !v);
-              setSelectedGuestId(null);
+              clearSelection();
             }}
           >
             {editLayout ? "Done moving tables" : "Move tables"}
@@ -227,10 +288,20 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
         <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-          {selectedGuest && (
+          {(selectedParty || selectedGuest) && (
             <p className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-800">
-              Now click a table to seat <strong>{selectedGuest.name}</strong>.{" "}
-              <button className="underline" onClick={() => setSelectedGuestId(null)}>
+              Now click a table to seat{" "}
+              <strong>
+                {selectedParty
+                  ? `${selectedParty.party}${
+                      selectedParty.members.length > 1
+                        ? ` (${selectedParty.members.length} people)`
+                        : ""
+                    }`
+                  : selectedGuest!.name}
+              </strong>
+              .{" "}
+              <button className="underline" onClick={clearSelection}>
                 cancel
               </button>
             </p>
@@ -242,10 +313,12 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
             onTableClick={handleTableClick}
             onTableMove={handleTableMove}
             editLayout={editLayout}
+            platformLabel={data.coupleNames}
           />
           <p className="mt-3 text-xs text-stone-400">
-            Placeholder room layout — we&rsquo;ll redraw it once Buta Palace sends the real
-            floor plan. An amber dot marks a table where someone has declined.
+            The real Buta Palace floor plan. Pinch or use the buttons to zoom; drag the
+            background to pan. An amber dot marks a table where someone has declined;
+            amber chairs are seats squeezed in beyond the standard 12 (18 at the ovals).
           </p>
         </div>
 
@@ -268,10 +341,13 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
           <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
             <div className="flex items-baseline justify-between">
               <h2 className="font-medium">Still to seat</h2>
-              <span className="text-sm text-stone-500">{unseated.length}</span>
+              <span className="text-sm text-stone-500">
+                {parties.length} {parties.length === 1 ? "party" : "parties"} · {unseated.length}
+              </span>
             </div>
             <p className="mt-1 text-xs text-stone-400">
-              Everyone is here, replied or not. Seat the room now; the replies catch up.
+              Everyone is here, replied or not. Pick a party, then click its table on the
+              plan — or open a party to seat people one by one.
             </p>
 
             <div className="mt-3 flex flex-col gap-2">
@@ -308,40 +384,83 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
               </div>
             </div>
 
-            <div className="mt-3 flex max-h-[420px] flex-col gap-1 overflow-y-auto">
-              {unseated.length === 0 && (
+            <div className="mt-3 flex max-h-[480px] flex-col gap-1.5 overflow-y-auto">
+              {parties.length === 0 && (
                 <p className="py-6 text-center text-sm text-stone-400">
                   Nobody left matching this filter.
                 </p>
               )}
-              {unseated.map((g) => {
-                const mates = data.guests.filter(
-                  (o) => o.householdId === g.householdId && !o.tableId
-                ).length;
+              {parties.map((p) => {
+                const isSelected = p.householdId === selectedHouseholdId;
+                const isExpanded = expanded.has(p.householdId);
                 return (
-                  <button
-                    key={g.id}
-                    onClick={() =>
-                      setSelectedGuestId((cur) => (cur === g.id ? null : g.id))
-                    }
-                    className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                      selectedGuestId === g.id
-                        ? "border-rose-500 bg-rose-50"
-                        : "border-stone-200 hover:bg-stone-50"
+                  <div
+                    key={p.householdId}
+                    className={`rounded-lg border transition ${
+                      isSelected ? "border-rose-500 bg-rose-50" : "border-stone-200"
                     }`}
                   >
-                    <span className="flex items-center gap-2">
-                      <RsvpDot rsvp={g.rsvp} />
-                      <span className="font-medium">
-                        {g.isChild ? "🧒 " : ""}
-                        {g.name}
+                    <button
+                      onClick={() => {
+                        setSelectedGuestId(null);
+                        setSelectedHouseholdId((cur) =>
+                          cur === p.householdId ? null : p.householdId
+                        );
+                      }}
+                      className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-stone-50"
+                    >
+                      <span className="flex items-baseline justify-between gap-2">
+                        <span className="font-medium">{p.party}</span>
+                        <span className="shrink-0 text-xs text-stone-500">
+                          {p.members.length === 1 ? "1 person" : `${p.members.length} people`}
+                        </span>
                       </span>
-                    </span>
-                    <span className="mt-0.5 block pl-4 text-xs text-stone-500">
-                      {g.group}
-                      {mates > 1 && ` · ${mates} in this party`}
-                    </span>
-                  </button>
+                      <span className="mt-1 flex items-center gap-1.5 text-xs text-stone-500">
+                        <span className="flex items-center gap-0.5">
+                          {p.members.map((m) => (
+                            <RsvpDot key={m.id} rsvp={m.rsvp} />
+                          ))}
+                        </span>
+                        {p.group}
+                      </span>
+                    </button>
+                    {p.members.length > 1 && (
+                      <button
+                        onClick={() =>
+                          setExpanded((cur) => {
+                            const next = new Set(cur);
+                            if (next.has(p.householdId)) next.delete(p.householdId);
+                            else next.add(p.householdId);
+                            return next;
+                          })
+                        }
+                        className="px-3 pb-2 text-xs text-stone-400 hover:underline"
+                      >
+                        {isExpanded ? "seat together instead" : "seat one by one…"}
+                      </button>
+                    )}
+                    {isExpanded &&
+                      p.members.map((g) => (
+                        <button
+                          key={g.id}
+                          onClick={() => {
+                            setSelectedHouseholdId(null);
+                            setSelectedGuestId((cur) => (cur === g.id ? null : g.id));
+                          }}
+                          className={`mx-2 mb-1.5 block w-[calc(100%-1rem)] rounded-md border px-2.5 py-1.5 text-left text-sm transition ${
+                            selectedGuestId === g.id
+                              ? "border-rose-500 bg-rose-50"
+                              : "border-stone-100 hover:bg-stone-50"
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <RsvpDot rsvp={g.rsvp} />
+                            {g.isChild ? "🧒 " : ""}
+                            {g.name}
+                          </span>
+                        </button>
+                      ))}
+                  </div>
                 );
               })}
             </div>

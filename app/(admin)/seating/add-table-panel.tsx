@@ -33,12 +33,14 @@ export function AddTablePanel({ onDone }: { onDone: () => void }) {
       </label>
       <label className="flex flex-col gap-1 text-xs font-medium text-stone-600">
         Seats
-        <input name="capacity" type="number" min={1} max={40} defaultValue={10} className={`${inputCls} w-20`} />
+        <input name="capacity" type="number" min={1} max={40} defaultValue={12} className={`${inputCls} w-20`} />
       </label>
       <label className="flex flex-col gap-1 text-xs font-medium text-stone-600">
         Shape
         <select name="shape" className={inputCls} defaultValue="round">
           <option value="round">Round</option>
+          <option value="half">Half-round</option>
+          <option value="oval">Oval</option>
           <option value="long">Long</option>
         </select>
       </label>

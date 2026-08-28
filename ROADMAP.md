@@ -7,7 +7,7 @@ or a decision is made — it is the single source of truth for project status.*
 
 ## The problem
 
-The guest list for Agil & Semra's wedding (23 October 2026, 19:00, Buta Palace, Baku)
+The guest list for Agil & Samra's wedding (23 October 2026, 19:00, Buta Palace, Baku)
 lived in one Excel sheet: 234 invited parties / ~387 people in hand-drawn blocks, tallied
 by fragile formulas. It could not track RSVPs, phone numbers, seating, or travel — and
 only one person could edit it. On top of that, **guests do not all have the same day**:
@@ -40,6 +40,7 @@ edits in one place and the guest's page updates instantly.
 | 2 | Programmes (per-group day plans A/B/C), seating floor plan, public homepage | ✅ done 17–23 Aug |
 | 2.5 | Hardening: git + GitHub, 10-test smoke suite, refactor, moved out of iCloud | ✅ done 23 Aug |
 | 3 | Deployment — live at wedding-app-mu-ten.vercel.app (Vercel + Neon Postgres, both in Frankfurt); deploys automatically on every `git push` | ✅ done 28 Aug |
+| 3.5 | Real Buta Palace floor plan: the venue's actual 40-table room (504 seats) drawn as an interactive map with per-seat dots, party-first seating queue, squeeze-in extra chairs, zoom/pan for iPads | ✅ done 28 Aug |
 | 4 | **Travel/hotels module** — hotel list, room assignments, arrivals/departures board, transfer grouping; feeds Group C invitations | 🔜 next build |
 | 5 | Activities — trips for out-of-town guests, sign-up via invite link | ⏳ after travel |
 
@@ -53,10 +54,10 @@ edits in one place and the guest's page updates instantly.
 | Add phone numbers (needed to send WhatsApp invites) | Guests | 1 of 234 |
 | Mark bride's / groom's side per party (optional, helps seating) | Guests | 0 set |
 | Replace remaining placeholder text (venue address detail, map link, welcome text) | Settings | partially placeholder |
-| Get the real room layout from Buta Palace, then drag tables to match | Seating → Move tables | placeholder layout |
+| Ask Buta Palace whether they have official table numbers — if yes, adopt theirs before place cards are printed (5-minute change) | — | ❗ ask the venue |
 | **Change the admin password** (still the seed default) | live site → Settings | ❗ urgent — site is public now |
 | Re-add Ilya Briskman's +1 (his wife) on the live site | Guests → open party → Add member | 1 minute |
-| Seat the room | Seating | 2 of 387 |
+| Seat the room (now on the real floor plan) | Seating | 0 of 387 |
 | Send invitations (WhatsApp, per party) | Guests → Copy invite | waits for travel module |
 
 ## Decisions made (and why)
@@ -76,6 +77,13 @@ edits in one place and the guest's page updates instantly.
 - **Deploy before the travel module** so the family can do data entry from their phones. *(23 Aug)*
 - **Test data cleared at the Postgres migration** — production starts from the clean
   spreadsheet import, plus Ilya Briskman's +1 (his wife), Agil's one real edit. *(23 Aug)*
+- **The seating map is the venue's real room** (from Buta Palace's floor plan): 28 round
+  ×12 + 8 half-round ×12 along the runway + 4 corner ovals ×18 = 504 seats. Numbering is
+  ours — 1–8 runway, 9–22 left block, 23–36 right block, 37–40 ovals — until the venue
+  says it has official numbers. Agil & Samra sit on the platform at the runway's end (it
+  is drawn on the map, not a bookable table). Tables can be stretched to 13/14 seats from
+  the table panel; extra chairs show in amber. A database that already has seated guests
+  never gets its layout swapped by the seed. *(28 Aug)*
 - **English-only guest pages** for now. *(8 Aug)*
 - **Boring tech, no black box** (Agil's standing requirement): Next.js + Prisma + SQLite
   → Postgres, minimal dependencies, README as owner's manual, tests as the safety net. 
@@ -93,7 +101,7 @@ edits in one place and the guest's page updates instantly.
 ## Open questions for Agil
 
 1. RSVP deadline — is 1 October right?
-2. Bride's side: is Semra's family's list coming into this same app, and who from her
+2. Bride's side: is Samra's family's list coming into this same app, and who from her
    side gets a family login?
 3. Hotels: which ones will we actually offer to Group C guests?
 4. Transfers: private drivers, a minibus, or case-by-case?

@@ -17,13 +17,14 @@ export async function assignGuest(guestId: string, tableId: string | null) {
 }
 
 /**
- * Seat a whole party together — the common case, families sit together.
- * Everyone in the party is seated whatever their reply says: the room is planned
- * before the replies are in, and reconciled afterwards.
+ * Seat several people at once — the common case, a whole party together.
+ * Takes exact guest ids rather than a household, so it seats precisely who was
+ * picked and never silently moves a party member already seated elsewhere.
  */
-export async function seatParty(householdId: string, tableId: string) {
+export async function seatGuests(guestIds: string[], tableId: string) {
   await requireAdminAction();
-  await db.guest.updateMany({ where: { householdId }, data: { tableId } });
+  if (guestIds.length === 0) return;
+  await db.guest.updateMany({ where: { id: { in: guestIds } }, data: { tableId } });
   refresh();
 }
 
@@ -47,6 +48,8 @@ export async function clearTable(tableId: string) {
   refresh();
 }
 
+const SHAPES = ["round", "half", "oval", "long"];
+
 export async function addTable(name: string, capacity: number, shape: string) {
   await requireAdminAction();
   const trimmed = name.trim();
@@ -55,8 +58,8 @@ export async function addTable(name: string, capacity: number, shape: string) {
   await db.seatTable.create({
     data: {
       name: trimmed,
-      capacity: Math.max(1, Math.min(40, Math.round(capacity) || 10)),
-      shape: shape === "long" ? "long" : "round",
+      capacity: Math.max(1, Math.min(40, Math.round(capacity) || 12)),
+      shape: SHAPES.includes(shape) ? shape : "round",
       sortOrder: count,
       // Drops into the middle of the room; the family drags it where it belongs.
       x: 50,
@@ -87,6 +90,18 @@ export async function deleteTable(tableId: string) {
   await requireAdminAction();
   // Guests keep their record and simply become unseated (onDelete: SetNull).
   await db.seatTable.delete({ where: { id: tableId } });
+  refresh();
+}
+
+/** Turn a table 45° on the plan — for the angled corner ovals, and for
+ *  choosing which way a half-round table's flat side faces. */
+export async function rotateTable(tableId: string) {
+  await requireAdminAction();
+  const table = await db.seatTable.findUniqueOrThrow({ where: { id: tableId } });
+  await db.seatTable.update({
+    where: { id: tableId },
+    data: { rotation: (table.rotation + 45) % 360 },
+  });
   refresh();
 }
 

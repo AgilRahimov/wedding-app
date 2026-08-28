@@ -3,6 +3,7 @@ import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 import fs from "fs";
 import path from "path";
+import { REAL_ROOM_TABLES } from "../lib/room-layout";
 
 const prisma = new PrismaClient();
 
@@ -38,7 +39,7 @@ async function seedEventInfo() {
     update: {},
     create: {
       id: 1,
-      coupleNames: "Agil & Semra",
+      coupleNames: "Agil & Samra",
       weddingDate: "23 October 2026",
       ceremonyTime: "19:00",
       venueName: "Buta Palace",
@@ -167,36 +168,31 @@ async function seedProgrammes() {
 }
 
 async function seedTables() {
-  if ((await prisma.seatTable.count()) > 0) return;
+  // The room is the real Buta Palace layout. Databases seeded before the venue
+  // sent its plan hold an older placeholder room (round/long tables only) — that
+  // one gets swapped out here, but only while nobody is seated on it, so a room
+  // the family has already worked on is never touched.
+  const existing = await prisma.seatTable.findMany({ select: { shape: true } });
+  const hasRealRoom = existing.some((t) => t.shape === "half" || t.shape === "oval");
+  if (hasRealRoom) return;
 
-  // A starter floor plan for Buta Palace: a long top table, then round
-  // tables in two blocks either side of the dance floor. x/y are
-  // percentages of the room, so the plan scales to any screen.
-  const tables: { name: string; capacity: number; x: number; y: number; shape: string }[] = [
-    { name: "Top table", capacity: 8, x: 50, y: 19, shape: "long" },
-  ];
-
-  // Five full rows of six, then a short row of four framing the entrance:
-  // 34 round tables of ten. The centre column is left clear for the dance floor.
-  const columns = [10, 23, 36, 64, 77, 90];
-  const rows = [30, 41, 52, 63, 74];
-  let n = 1;
-  for (const y of rows) {
-    for (const x of columns) {
-      tables.push({ name: `Table ${n}`, capacity: 10, x, y, shape: "round" });
-      n += 1;
+  if (existing.length > 0) {
+    const seated = await prisma.guest.count({ where: { tableId: { not: null } } });
+    if (seated > 0) {
+      console.log(
+        `Kept the old placeholder floor plan: ${seated} guests are already seated on it.`
+      );
+      return;
     }
-  }
-  for (const x of [23, 36, 64, 77]) {
-    tables.push({ name: `Table ${n}`, capacity: 10, x, y: 85, shape: "round" });
-    n += 1;
+    await prisma.seatTable.deleteMany();
+    console.log(`Removed the ${existing.length} placeholder tables.`);
   }
 
-  await prisma.seatTable.createMany({
-    data: tables.map((t, i) => ({ ...t, sortOrder: i })),
-  });
-  const seats = tables.reduce((sum, t) => sum + t.capacity, 0);
-  console.log(`Created ${tables.length} tables (${seats} seats).`);
+  await prisma.seatTable.createMany({ data: REAL_ROOM_TABLES });
+  const seats = REAL_ROOM_TABLES.reduce((sum, t) => sum + t.capacity, 0);
+  console.log(
+    `Created the Buta Palace floor plan: ${REAL_ROOM_TABLES.length} tables (${seats} seats).`
+  );
 }
 
 async function main() {

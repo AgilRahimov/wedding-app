@@ -2,11 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { btnGhost, btnPrimary, inputCls, RsvpDot } from "@/components/ui";
-import { assignGuest, clearTable, deleteTable, seatParty, updateTable } from "./actions";
+import { assignGuest, clearTable, deleteTable, rotateTable, seatGuests, updateTable } from "./actions";
 import type { SeatingGuest } from "./seating-screen";
 
+// The venue's standard sizes — anything above is a squeezed-in extra chair.
+function standardSeats(shape: string) {
+  return shape === "oval" ? 18 : 12;
+}
+
 /** The right-hand panel for one table: who sits there, seat-the-party
- *  shortcut, rename/resize, empty, delete. */
+ *  shortcut, add/remove a chair, rename, rotate, empty, delete. */
 export function TablePanel({
   table,
   guests,
@@ -15,7 +20,7 @@ export function TablePanel({
   onClose,
   run,
 }: {
-  table: { id: string; name: string; capacity: number; seated: number };
+  table: { id: string; name: string; capacity: number; seated: number; shape: string };
   guests: SeatingGuest[];
   selectedGuest: SeatingGuest | null;
   partyMatesToSeat: SeatingGuest[];
@@ -24,16 +29,15 @@ export function TablePanel({
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(table.name);
-  const [capacity, setCapacity] = useState(String(table.capacity));
 
   useEffect(() => {
     setName(table.name);
-    setCapacity(String(table.capacity));
     setEditing(false);
-  }, [table.id, table.name, table.capacity]);
+  }, [table.id, table.name]);
 
   const confirmed = guests.filter((g) => g.rsvp === "yes").length;
   const declined = guests.filter((g) => g.rsvp === "no").length;
+  const extra = table.capacity - standardSeats(table.shape);
 
   return (
     <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
@@ -52,10 +56,47 @@ export function TablePanel({
         </p>
       )}
 
+      <div className="mt-3 flex items-center gap-2 text-sm">
+        <span className="text-stone-600">Seats:</span>
+        <button
+          aria-label="Remove a seat"
+          className="h-7 w-7 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 disabled:opacity-40"
+          disabled={table.capacity <= Math.max(1, table.seated)}
+          onClick={() =>
+            run(() => updateTable(table.id, { name: table.name, capacity: table.capacity - 1 }))
+          }
+        >
+          −
+        </button>
+        <span className="w-6 text-center tabular-nums">{table.capacity}</span>
+        <button
+          aria-label="Add a seat"
+          className="h-7 w-7 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 disabled:opacity-40"
+          disabled={table.capacity >= 20}
+          onClick={() =>
+            run(() => updateTable(table.id, { name: table.name, capacity: table.capacity + 1 }))
+          }
+        >
+          +
+        </button>
+        {extra > 0 && (
+          <span className="text-xs text-amber-600">
+            {extra} squeezed in
+          </span>
+        )}
+      </div>
+
       {selectedGuest && partyMatesToSeat.length > 1 && (
         <button
           className={`${btnGhost} mt-3 w-full`}
-          onClick={() => run(() => seatParty(selectedGuest.householdId, table.id))}
+          onClick={() =>
+            run(() =>
+              seatGuests(
+                partyMatesToSeat.map((g) => g.id),
+                table.id
+              )
+            )
+          }
         >
           Seat all {partyMatesToSeat.length} of {selectedGuest.party} here
         </button>
@@ -98,24 +139,13 @@ export function TablePanel({
         <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-stone-100 pt-3">
           <label className="flex flex-col gap-1 text-xs text-stone-600">
             Name
-            <input className={`${inputCls} w-32`} value={name} onChange={(e) => setName(e.target.value)} />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-stone-600">
-            Seats
-            <input
-              type="number"
-              min={1}
-              max={40}
-              className={`${inputCls} w-16`}
-              value={capacity}
-              onChange={(e) => setCapacity(e.target.value)}
-            />
+            <input className={`${inputCls} w-40`} value={name} onChange={(e) => setName(e.target.value)} />
           </label>
           <button
             className={btnPrimary}
             onClick={() =>
               run(async () => {
-                await updateTable(table.id, { name, capacity: Number(capacity) });
+                await updateTable(table.id, { name, capacity: table.capacity });
                 setEditing(false);
               })
             }
@@ -129,8 +159,16 @@ export function TablePanel({
       ) : (
         <div className="mt-4 flex flex-wrap gap-3 border-t border-stone-100 pt-3 text-sm">
           <button className="text-stone-600 hover:underline" onClick={() => setEditing(true)}>
-            Rename / resize
+            Rename
           </button>
+          {table.shape !== "round" && (
+            <button
+              className="text-stone-600 hover:underline"
+              onClick={() => run(() => rotateTable(table.id))}
+            >
+              Rotate 45°
+            </button>
+          )}
           {guests.length > 0 && (
             <button
               className="text-stone-600 hover:underline"

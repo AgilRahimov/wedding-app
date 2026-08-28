@@ -159,6 +159,7 @@ export default async function InvitePage({
               <VenueMap
                 variant="guest"
                 highlightTableId={partyTables[0].id}
+                platformLabel={info.coupleNames || "The couple"}
                 tables={tables.map((t) => ({
                   id: t.id,
                   name: t.name,
@@ -166,6 +167,7 @@ export default async function InvitePage({
                   x: t.x,
                   y: t.y,
                   shape: t.shape,
+                  rotation: t.rotation,
                   seated: t._count.guests,
                 }))}
               />

@@ -88,5 +88,8 @@ export async function submitRsvp(
   revalidatePath(`/invite/${token}`);
   revalidatePath("/guests");
   revalidatePath("/dashboard");
+  // Seating shows every member of every party (renamed +1s, added children
+  // included), so a guest's reply must refresh it too.
+  revalidatePath("/seating");
   return { ok: "Thank you! Your reply has been saved. You can come back and change it any time." };
 }

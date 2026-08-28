@@ -12,7 +12,10 @@ export async function GET(request: Request) {
 
   const households = await db.household.findMany({
     include: {
-      guests: { orderBy: [{ isPlusOne: "asc" }, { createdAt: "asc" }, { id: "asc" }] },
+      guests: {
+        orderBy: [{ isPlusOne: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+        include: { table: true },
+      },
       programme: true,
       hotel: true,
     },
@@ -32,6 +35,7 @@ export async function GET(request: Request) {
     { header: "Child", key: "child", width: 7 },
     { header: "Age", key: "age", width: 5 },
     { header: "RSVP", key: "rsvp", width: 9 },
+    { header: "Table", key: "table", width: 10 },
     { header: "Programme", key: "programme", width: 12 },
     { header: "Abroad", key: "abroad", width: 8 },
     { header: "Arrives", key: "arrives", width: 18 },
@@ -45,7 +49,7 @@ export async function GET(request: Request) {
   ];
   ws.getRow(1).font = { bold: true };
   ws.views = [{ state: "frozen", ySplit: 1 }];
-  ws.autoFilter = { from: "A1", to: "R1" };
+  ws.autoFilter = { from: "A1", to: "S1" };
 
   for (const h of households) {
     for (const g of h.guests) {
@@ -58,6 +62,7 @@ export async function GET(request: Request) {
         child: g.isChild ? "yes" : "",
         age: g.age ?? "",
         rsvp: g.rsvp,
+        table: g.table?.name ?? "",
         programme: h.programme?.name ?? "",
         abroad: h.isInternational ? "yes" : "",
         arrives: [h.arrivalDate, h.arrivalDetails].filter(Boolean).join(" · "),

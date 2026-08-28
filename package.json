@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "db:seed": "tsx prisma/seed.ts",
-    "backup": "mkdir -p backups && cp prisma/dev.db backups/dev-$(date +%Y-%m-%d-%H%M).db && ( mkdir -p \"$HOME/Documents/Wed/wedding-backups\" && cp prisma/dev.db \"$HOME/Documents/Wed/wedding-backups/dev-$(date +%Y-%m-%d-%H%M).db\" && echo 'Backed up locally and to iCloud.' ) || echo 'Backed up locally. (iCloud copy skipped \u2014 no permission.)'",
+    "backup": "mkdir -p backups && /opt/homebrew/opt/postgresql@17/bin/pg_dump -d wedding_dev -f backups/dev-$(date +%Y-%m-%d-%H%M).sql && ( mkdir -p \"$HOME/Documents/Wed/wedding-backups\" && cp backups/dev-$(date +%Y-%m-%d-%H%M).sql \"$HOME/Documents/Wed/wedding-backups/\" && echo 'Backed up locally and to iCloud.' ) || echo 'Backed up locally. (iCloud copy skipped.)'",
     "test": "playwright test"
   },
   "dependencies": {

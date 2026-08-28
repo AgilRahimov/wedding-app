@@ -18,9 +18,11 @@ export function fixtures(): Fixtures {
   );
 }
 
-// One client for direct checks against the TEST database
-// (playwright.config.ts points DATABASE_URL at prisma/test.db).
-export const db = new PrismaClient();
+// One client for direct checks against the TEST database — pinned to
+// wedding_test so a test can never read or write the real data.
+export const db = new PrismaClient({
+  datasourceUrl: "postgresql://agilrahimov@localhost:5432/wedding_test",
+});
 
 export async function signIn(page: Page) {
   await page.goto("/login");

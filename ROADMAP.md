@@ -39,9 +39,9 @@ edits in one place and the guest's page updates instantly.
 | 1 | Guest list + RSVP: dashboard, guests screen, settings, invite links | ✅ done 8 Aug |
 | 2 | Programmes (per-group day plans A/B/C), seating floor plan, public homepage | ✅ done 17–23 Aug |
 | 2.5 | Hardening: git + GitHub, 10-test smoke suite, refactor, moved out of iCloud | ✅ done 23 Aug |
-| 3 | **Travel/hotels module** — hotel list, room assignments, arrivals/departures board, transfer grouping; feeds Group C invitations | 🔜 next build |
-| 4 | Activities — trips for out-of-town guests, sign-up via invite link | ⏳ after travel |
-| 5 | Deployment — Vercel + managed Postgres, custom domain; **must happen before invitations go out** (guests need the site reachable from their phones) | ⏳ after travel |
+| 3 | **Deployment** — Vercel + Neon Postgres; pulled forward so the family can enter phones/groups/programmes from their own phones | 🔜 in progress |
+| 4 | Travel/hotels module — hotel list, room assignments, arrivals/departures board, transfer grouping; feeds Group C invitations | ⏳ after deploy |
+| 5 | Activities — trips for out-of-town guests, sign-up via invite link | ⏳ after travel |
 
 ## Family to-do (the app is waiting on these)
 
@@ -70,7 +70,11 @@ edits in one place and the guest's page updates instantly.
 - **Travel lives on the party, not the person** — families travel together; exceptions go
   in notes. *(17 Aug)*
 - **Invites delivered by hand over WhatsApp** — no email infrastructure. *(8 Aug)*
-- **Hosting: Vercel + managed Postgres**, paid tiers fine ($20–50/mo). *(8 Aug)*
+- **Hosting: Vercel + managed Postgres**, paid tiers fine ($20–50/mo). *(8 Aug; reaffirmed
+  over Azure 23 Aug — "prefer Vercel instead of spending time configuring azure")*
+- **Deploy before the travel module** so the family can do data entry from their phones. *(23 Aug)*
+- **Test data cleared at the Postgres migration** — production starts from the clean
+  spreadsheet import, plus Ilya Briskman's +1 (his wife), Agil's one real edit. *(23 Aug)*
 - **English-only guest pages** for now. *(8 Aug)*
 - **Boring tech, no black box** (Agil's standing requirement): Next.js + Prisma + SQLite
   → Postgres, minimal dependencies, README as owner's manual, tests as the safety net. 

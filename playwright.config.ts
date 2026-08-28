@@ -1,13 +1,13 @@
 import { defineConfig } from "@playwright/test";
 
 /**
- * The smoke suite runs against ITS OWN database (prisma/test.db) and its own
- * build dir (.next-test) on port 3100 — it never touches the real guest data
- * or collides with `npm run dev`. global-setup.ts migrates and seeds that
- * database from scratch on every run.
+ * The smoke suite runs against ITS OWN database (wedding_test on the local
+ * Postgres) and its own build dir (.next-test) on port 3100 — it never touches
+ * the real guest data or collides with `npm run dev`. global-setup.ts resets
+ * and seeds that database from scratch on every run.
  */
 const TEST_ENV = {
-  DATABASE_URL: "file:./test.db",
+  DATABASE_URL: "postgresql://agilrahimov@localhost:5432/wedding_test",
   NEXT_DIST_DIR: ".next-test",
 };
 

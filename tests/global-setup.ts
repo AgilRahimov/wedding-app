@@ -2,21 +2,32 @@ import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 
+const TEST_DB_URL = "postgresql://agilrahimov@localhost:5432/wedding_test";
+
 /**
- * Builds a fresh test database before every run:
- * wipe → apply migrations → seed (234 parties, programmes, tables),
+ * Builds a fresh test database before every run: empty the wedding_test
+ * schema, apply all migrations, seed (234 parties, programmes, tables),
  * then save a few real ids/tokens to fixtures.json for the tests to use.
+ *
+ * The wipe is deliberately hard-coded to wedding_test and refuses anything
+ * else — it can never touch wedding_dev or production.
  */
 export default async function globalSetup() {
-  const dbFile = path.join(__dirname, "..", "prisma", "test.db");
-  if (fs.existsSync(dbFile)) fs.unlinkSync(dbFile);
+  if (!TEST_DB_URL.includes("/wedding_test")) {
+    throw new Error("Refusing to wipe anything but the wedding_test database");
+  }
 
-  const env = { ...process.env, DATABASE_URL: "file:./test.db" };
+  const { PrismaClient } = await import("@prisma/client");
+  const wiper = new PrismaClient({ datasourceUrl: TEST_DB_URL });
+  await wiper.$executeRawUnsafe("DROP SCHEMA public CASCADE");
+  await wiper.$executeRawUnsafe("CREATE SCHEMA public");
+  await wiper.$disconnect();
+
+  const env = { ...process.env, DATABASE_URL: TEST_DB_URL };
   execSync("npx prisma migrate deploy", { env, stdio: "pipe" });
   execSync("npx tsx prisma/seed.ts", { env, stdio: "pipe" });
 
-  const { PrismaClient } = await import("@prisma/client");
-  const db = new PrismaClient();
+  const db = new PrismaClient({ datasourceUrl: TEST_DB_URL });
   const household = await db.household.findFirstOrThrow({
     include: { guests: true },
     orderBy: { name: "asc" },

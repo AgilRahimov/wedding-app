@@ -1,6 +1,6 @@
 # Wedding HQ — orientation for a fresh session
 
-Agil & Semra's wedding: **23 October 2026, 19:00, Buta Palace, Baku.**
+Agil & Samra's wedding: **23 October 2026, 19:00, Buta Palace, Baku.**
 This app manages the guest list (234 parties / ~387 people), RSVPs via personal
 invite links, seating on a floor plan, and per-group day programmes.
 

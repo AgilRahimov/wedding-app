@@ -22,6 +22,7 @@ export default async function GuestsPage() {
       programmes={programmes.map((p) => ({ id: p.id, code: p.code, name: p.name }))}
       coupleNames={eventInfo?.coupleNames ?? ""}
       weddingDate={eventInfo?.weddingDate ?? ""}
+      savedGroupOrder={eventInfo?.groupOrder ?? ""}
     />
   );
 }

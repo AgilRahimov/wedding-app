@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { btnGhost, btnPrimary, inputCls, rsvpPill } from "@/components/ui";
 import type { PartyView, ProgrammeOption } from "@/lib/party";
 import {
@@ -13,6 +13,7 @@ import {
 } from "./actions";
 import { AddPartyPanel } from "./add-party-panel";
 import { EditPanel } from "./edit-panel";
+import { GroupsBoard } from "./groups-board";
 import { GroupsPanel } from "./groups-panel";
 
 function toDraft(p: PartyView): PartyDraft {
@@ -47,11 +48,13 @@ export function GuestsScreen({
   programmes,
   coupleNames,
   weddingDate,
+  savedGroupOrder,
 }: {
   parties: PartyView[];
   programmes: ProgrammeOption[];
   coupleNames: string;
   weddingDate: string;
+  savedGroupOrder: string;
 }) {
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState("all");
@@ -68,7 +71,24 @@ export function GuestsScreen({
   // dropdown so parties can be moved in; once one is, the group lives in the
   // database like the rest.
   const [newGroups, setNewGroups] = useState<string[]>([]);
+  // "list" is the dense working view; "boxes" shows one box per group, like
+  // the spreadsheet's blocks — the view made for arranging groups on an iPad.
+  // Each device remembers which view it last used.
+  const [view, setView] = useState<"list" | "boxes">("list");
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("guestsView") === "boxes") setView("boxes");
+    } catch {}
+  }, []);
+
+  function switchView(v: "list" | "boxes") {
+    setView(v);
+    try {
+      localStorage.setItem("guestsView", v);
+    } catch {}
+  }
 
   const programmeById = useMemo(
     () => new Map(programmes.map((p) => [p.id, p])),
@@ -85,6 +105,27 @@ export function GuestsScreen({
   const sides = useMemo(
     () => [...new Set(parties.map((p) => p.side).filter(Boolean))] as string[],
     [parties]
+  );
+
+  // The boxes view shows groups in the family's saved order (dragged into
+  // place on the board); groups not yet in the saved order follow A→Z.
+  // "Ungrouped" is not a real group there — it is always the last, wide box.
+  const orderedGroups = useMemo<[string, number][]>(() => {
+    let saved: string[] = [];
+    try {
+      const parsed = JSON.parse(savedGroupOrder);
+      if (Array.isArray(parsed)) saved = parsed.filter((g) => typeof g === "string");
+    } catch {}
+    const named = groups.filter(([g]) => g !== "Ungrouped");
+    const known = new Map(named);
+    const first = saved.filter((g) => known.has(g));
+    const rest = named.map(([g]) => g).filter((g) => !first.includes(g));
+    return [...first, ...rest].map((g) => [g, known.get(g) ?? 0]);
+  }, [groups, savedGroupOrder]);
+
+  const ungroupedTotal = useMemo(
+    () => groups.find(([g]) => g === "Ungrouped")?.[1] ?? 0,
+    [groups]
   );
 
   const filtered = useMemo(() => {
@@ -190,11 +231,29 @@ export function GuestsScreen({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <div className="flex overflow-hidden rounded-lg border border-stone-200">
+            <button
+              onClick={() => switchView("list")}
+              className={`px-3 py-2 text-sm ${
+                view === "list" ? "bg-stone-800 text-white" : "bg-white text-stone-600 hover:bg-stone-50"
+              }`}
+            >
+              List
+            </button>
+            <button
+              onClick={() => switchView("boxes")}
+              className={`px-3 py-2 text-sm ${
+                view === "boxes" ? "bg-stone-800 text-white" : "bg-white text-stone-600 hover:bg-stone-50"
+              }`}
+            >
+              Boxes
+            </button>
+          </div>
           <button className={btnGhost} onClick={() => setShowGroups((v) => !v)}>
-            Groups
+            Manage groups
           </button>
-          <a href="/guests/export" className={btnGhost}>
-            Export Excel
+          <a href="/guests/export" className={btnGhost} title="A spreadsheet for printing or sharing — all editing happens here in the app">
+            Excel (print)
           </a>
           <button className={btnPrimary} onClick={() => setShowAdd((v) => !v)}>
             + Add party
@@ -225,18 +284,20 @@ export function GuestsScreen({
           placeholder="Search name or phone…"
           className={`${inputCls} w-56 max-w-full`}
         />
-        <select
-          value={groupFilter}
-          onChange={(e) => setGroupFilter(e.target.value)}
-          className={inputCls}
-        >
-          <option value="all">All groups</option>
-          {groups.map(([g, n]) => (
-            <option key={g} value={g}>
-              {g} ({n})
-            </option>
-          ))}
-        </select>
+        {view === "list" && (
+          <select
+            value={groupFilter}
+            onChange={(e) => setGroupFilter(e.target.value)}
+            className={inputCls}
+          >
+            <option value="all">All groups</option>
+            {groups.map(([g, n]) => (
+              <option key={g} value={g}>
+                {g} ({n})
+              </option>
+            ))}
+          </select>
+        )}
         <select
           value={programmeFilter}
           onChange={(e) => setProgrammeFilter(e.target.value)}
@@ -373,6 +434,62 @@ export function GuestsScreen({
         </div>
       )}
 
+      {view === "boxes" && (
+        <>
+          {expandedId &&
+            draft &&
+            (() => {
+              const p = parties.find((x) => x.id === expandedId);
+              if (!p) return null;
+              return (
+                <div className="overflow-hidden rounded-2xl border border-rose-200 bg-white shadow-sm">
+                  <div className="flex items-center justify-between bg-rose-50 px-4 py-2.5">
+                    <p className="text-sm font-medium">{p.name}</p>
+                    <button className="text-sm text-stone-500 hover:underline" onClick={close}>
+                      close
+                    </button>
+                  </div>
+                  <EditPanel
+                    draft={draft}
+                    setDraft={setDraft}
+                    groups={groups.map(([g]) => g)}
+                    sides={sides}
+                    programmes={programmes}
+                    rsvpNote={p.rsvpNote}
+                    token={p.token}
+                    isPending={isPending}
+                    onSave={save}
+                    onCancel={close}
+                    onDelete={() => removeParty(p)}
+                  />
+                </div>
+              );
+            })()}
+          <GroupsBoard
+            orderedGroups={orderedGroups}
+            ungroupedTotal={ungroupedTotal}
+            groupFilter={groupFilter}
+            onGroupFilter={setGroupFilter}
+            parties={filtered}
+            selected={selected}
+            onToggleSelected={toggleSelected}
+            onOpen={(p) => {
+              if (expandedId === p.id) {
+                close();
+                return;
+              }
+              open(p);
+              // The edit form sits above the boxes — bring it into view.
+              requestAnimationFrame(() =>
+                window.scrollTo({ top: 0, behavior: "smooth" })
+              );
+            }}
+            expandedId={expandedId}
+          />
+        </>
+      )}
+
+      {view === "list" && (
       <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
         {filtered.length === 0 && (
           <p className="p-8 text-center text-sm text-stone-500">
@@ -464,6 +581,7 @@ export function GuestsScreen({
           })}
         </ul>
       </div>
+      )}
     </div>
   );
 }

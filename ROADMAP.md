@@ -92,6 +92,11 @@ edits in one place and the guest's page updates instantly.
   fall back to "Ungrouped"), and a bulk "Move to group" for ticked parties. Azerbaijani
   letters (Ə, Ü, Ş, Ç, Ğ, İ…) verified working in names, groups, search and the guest
   pages. *(29 Aug)*
+- **The Guests screen has a Boxes view** (one box per group, like the spreadsheet's
+  blocks) for arranging groups on an iPad — Agil's father's way of working with the
+  list. Boxes drag into a saved order; "Ungrouped" is always the wide box at the bottom.
+  Excel is demoted to a print-only export: the JSON backup is the real data safety net,
+  and all editing happens in the app. *(29 Aug)*
 - **English-only guest pages** for now. *(8 Aug)*
 - **Boring tech, no black box** (Agil's standing requirement): Next.js + Prisma + SQLite
   → Postgres, minimal dependencies, README as owner's manual, tests as the safety net. 

@@ -7,8 +7,13 @@ This app replaces `Spisok v2.xlsx`.
 
 - **Dashboard** — live totals: invited, coming, declined, awaiting reply.
 - **Guests** — the full list (imported from the spreadsheet: 234 parties / 386 people),
-  with search, filters, RSVP tracking, phone numbers, groups, Excel export, and travel
-  details for anyone flying in. Tick several parties to move them all to a programme at once.
+  with search, filters, RSVP tracking, phone numbers, groups, and travel details for
+  anyone flying in. Two views, remembered per device: **List** (dense, for working
+  through the list) and **Boxes** — one box per group, like the spreadsheet's blocks,
+  made for arranging groups on an iPad. Drag a box's ⠿ handle to put related groups
+  next to each other (the order is saved for everyone); tick parties to move them to a
+  group or programme in one go. "Excel (print)" makes a spreadsheet for printing or
+  sharing — all editing happens in the app itself.
 - **Seating** — the real Buta Palace floor plan (40 tables / 504 seats), with every
   chair drawn on the map. Pick a party in the queue, then click its table — the whole
   family is seated in one go (or open a party to seat people one by one). Pinch or use

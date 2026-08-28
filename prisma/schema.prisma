@@ -174,4 +174,7 @@ model EventInfo {
   // Homepage "Travelling to Baku" cards, one per line: "Title — text".
   // Empty means the built-in default cards are shown.
   travelInfo    String  @default("")
+  // The family's chosen ordering of guest groups on the Guests boxes view,
+  // as a JSON array of group names. Groups not in the list follow A→Z.
+  groupOrder    String  @default("")
 }

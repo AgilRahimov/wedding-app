@@ -178,22 +178,16 @@ export default async function SettingsPage({
             href="/settings/backup"
             className="rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
           >
-            Download full backup (JSON)
-          </a>
-          <a
-            href="/guests/export"
-            className="rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
-          >
-            Download guest list (Excel)
+            Download full backup
           </a>
           <RestorePanel />
         </div>
         <p className="mt-2 text-xs text-stone-400">
-          The JSON file is the complete database — guests, RSVPs, seating, programmes,
-          travel, hotels, event details. The Excel file is the same guest data in a
-          readable spreadsheet. &ldquo;Restore&rdquo; replaces everything here with a
-          backup file&rsquo;s contents — the way to move the whole database between the
-          laptop and the live site.
+          The backup file is the complete database — guests, RSVPs, seating, programmes,
+          travel, hotels, event details. &ldquo;Restore&rdquo; replaces everything here
+          with a backup file&rsquo;s contents — the way to move the whole database
+          between the laptop and the live site. (The Excel button on the Guests screen
+          is just a spreadsheet for printing — all editing happens in the app.)
         </p>
       </div>
     </div>

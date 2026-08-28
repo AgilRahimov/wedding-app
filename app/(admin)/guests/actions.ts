@@ -201,6 +201,7 @@ export async function deleteGroup(name: string) {
     where: { group: name },
     data: { group: "Ungrouped" },
   });
+  await editGroupOrder((order) => order.filter((g) => g !== name));
   refresh();
   return count;
 }
@@ -213,5 +214,33 @@ export async function renameGroup(from: string, to: string) {
     where: { group: from },
     data: { group: target },
   });
+  await editGroupOrder((order) => order.map((g) => (g === from ? target : g)));
   refresh();
+}
+
+/** Remember how the family arranged the group boxes on the Guests screen. */
+export async function saveGroupOrder(order: string[]) {
+  await requireAdminAction();
+  await db.eventInfo.update({
+    where: { id: 1 },
+    data: { groupOrder: JSON.stringify(order) },
+  });
+  refresh();
+}
+
+// The saved box ordering lives in EventInfo as a JSON list of group names;
+// renames and deletions keep it in step so boxes don't jump around.
+async function editGroupOrder(change: (order: string[]) => string[]) {
+  const info = await db.eventInfo.findUnique({ where: { id: 1 } });
+  if (!info?.groupOrder) return;
+  try {
+    const order = JSON.parse(info.groupOrder);
+    if (!Array.isArray(order)) return;
+    await db.eventInfo.update({
+      where: { id: 1 },
+      data: { groupOrder: JSON.stringify(change(order)) },
+    });
+  } catch {
+    // A malformed saved order is ignored rather than breaking group edits.
+  }
 }

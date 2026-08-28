@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 /**
  * The admin screens' shared look, in one place. These are deliberately plain
  * exported class strings (not wrapper components) so every usage stays a
@@ -30,6 +32,37 @@ export function RsvpDot({ rsvp }: { rsvp: string }) {
       title={label}
       aria-label={label}
     />
+  );
+}
+
+/** A centred overlay dialog. Clicking the dark backdrop or "close" closes it. */
+export function Modal({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4 sm:p-8"
+      onClick={onClose}
+    >
+      <div
+        className="mx-auto w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-stone-100 bg-stone-50/70 px-4 py-3">
+          <h2 className="text-sm font-medium">{title}</h2>
+          <button onClick={onClose} className="text-sm text-stone-500 hover:underline">
+            close
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
   );
 }
 

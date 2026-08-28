@@ -19,6 +19,7 @@ export function EditPanel({
   onSave,
   onCancel,
   onDelete,
+  onUngroup,
 }: {
   draft: PartyDraft;
   setDraft: (d: PartyDraft) => void;
@@ -31,6 +32,7 @@ export function EditPanel({
   onSave: () => void;
   onCancel: () => void;
   onDelete: () => void;
+  onUngroup?: () => void;
 }) {
   const set = (patch: Partial<PartyDraft>) => setDraft({ ...draft, ...patch });
   const setMember = (
@@ -236,6 +238,16 @@ export function EditPanel({
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-4 text-sm">
+          {onUngroup && draft.group !== "Ungrouped" && (
+            <button
+              type="button"
+              onClick={onUngroup}
+              className="text-stone-600 hover:underline"
+              title="Takes this party out of its group — they stay on the guest list"
+            >
+              Move to Ungrouped
+            </button>
+          )}
           <button type="button" onClick={onDelete} className="text-rose-600 hover:underline">
             Delete party
           </button>
@@ -262,6 +274,11 @@ export function EditPanel({
           </button>
         </div>
       </div>
+      <p className="mt-2 text-xs text-stone-400">
+        &ldquo;Move to Ungrouped&rdquo; only takes the party out of its group — they stay
+        on the guest list. &ldquo;Delete party&rdquo; removes the party and everyone in it
+        completely.
+      </p>
     </div>
   );
 }

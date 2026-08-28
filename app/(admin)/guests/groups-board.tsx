@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { RsvpDot } from "@/components/ui";
+import { inputCls, RsvpDot } from "@/components/ui";
 import type { PartyView } from "@/lib/party";
-import { saveGroupOrder } from "./actions";
+import { renameGroup, saveGroupOrder } from "./actions";
 
 /**
  * The boxes view of the guest list: one box per group, like the blocks of the
@@ -21,6 +21,7 @@ export function GroupsBoard({
   selected,
   onToggleSelected,
   onOpen,
+  onAddParty,
   expandedId,
 }: {
   orderedGroups: [string, number][];
@@ -31,12 +32,16 @@ export function GroupsBoard({
   selected: Set<string>;
   onToggleSelected: (id: string) => void;
   onOpen: (p: PartyView) => void;
+  onAddParty: (group: string) => void;
   expandedId: string | null;
 }) {
   const [dragging, setDragging] = useState<string | null>(null);
   // The order shown while dragging, ahead of the server catching up.
   const [localOrder, setLocalOrder] = useState<string[] | null>(null);
   const orderRef = useRef<string[] | null>(null);
+  // Renaming a group right in its box header.
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
 
   const propsOrder = orderedGroups.map(([g]) => g);
   const propsKey = propsOrder.join("|");
@@ -78,6 +83,18 @@ export function GroupsBoard({
   function setOrder(list: string[]) {
     orderRef.current = list;
     setLocalOrder(list);
+  }
+
+  function commitRename(g: string) {
+    const to = editValue.trim();
+    setEditing(null);
+    if (!to || to === g) return;
+    renameGroup(g, to)
+      .then(() => {
+        // Stay on the group if it was the one being viewed.
+        if (groupFilter === g) onGroupFilter(to);
+      })
+      .catch((e) => alert(e instanceof Error ? e.message : "Could not rename"));
   }
 
   function startDrag(e: React.PointerEvent, g: string) {
@@ -162,6 +179,7 @@ export function GroupsBoard({
   function box(g: string, wide: boolean) {
     const list = byGroup.get(g) ?? [];
     const total = g === "Ungrouped" ? ungroupedTotal : (totals.get(g) ?? 0);
+    const people = list.reduce((n, p) => n + p.members.length, 0);
     const isDragged = dragging === g;
     return (
       <section
@@ -183,11 +201,55 @@ export function GroupsBoard({
               ⠿
             </span>
           )}
-          <h3 className="min-w-0 flex-1 truncate text-sm font-medium">{g}</h3>
-          <span className="shrink-0 text-xs text-stone-400">
-            {list.length === total ? total : `${list.length} of ${total}`}{" "}
-            {total === 1 ? "party" : "parties"}
-          </span>
+          {editing === g ? (
+            <span className="flex min-w-0 flex-1 items-center gap-2">
+              <input
+                autoFocus
+                className={`${inputCls} min-w-0 flex-1`}
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitRename(g);
+                  if (e.key === "Escape") setEditing(null);
+                }}
+              />
+              <button
+                className="text-sm text-emerald-700 hover:underline"
+                onClick={() => commitRename(g)}
+              >
+                save
+              </button>
+              <button
+                className="text-sm text-stone-500 hover:underline"
+                onClick={() => setEditing(null)}
+              >
+                cancel
+              </button>
+            </span>
+          ) : (
+            <>
+              <h3 className="min-w-0 truncate text-sm font-medium">{g}</h3>
+              {g !== "Ungrouped" && (
+                <button
+                  title={`Rename ${g}`}
+                  aria-label={`Rename ${g}`}
+                  onClick={() => {
+                    setEditing(g);
+                    setEditValue(g);
+                  }}
+                  className="shrink-0 px-1 text-stone-400 hover:text-stone-600"
+                >
+                  ✎
+                </button>
+              )}
+              <span className="ml-auto shrink-0 text-xs text-stone-400">
+                {list.length === total ? total : `${list.length} of ${total}`}{" "}
+                {total === 1 ? "party" : "parties"} ·{" "}
+                <strong className="font-semibold text-stone-700">{people}</strong>{" "}
+                {people === 1 ? "person" : "people"}
+              </span>
+            </>
+          )}
         </header>
         <ul className="divide-y divide-stone-100">
           {list.map(partyRow)}
@@ -201,6 +263,12 @@ export function GroupsBoard({
             </li>
           )}
         </ul>
+        <button
+          onClick={() => onAddParty(g)}
+          className="mt-auto border-t border-stone-100 px-3 py-2 text-left text-sm text-stone-400 hover:bg-stone-50 hover:text-stone-600"
+        >
+          + Add party
+        </button>
       </section>
     );
   }

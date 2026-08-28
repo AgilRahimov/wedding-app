@@ -94,9 +94,15 @@ edits in one place and the guest's page updates instantly.
   pages. *(29 Aug)*
 - **The Guests screen has a Boxes view** (one box per group, like the spreadsheet's
   blocks) for arranging groups on an iPad — Agil's father's way of working with the
-  list. Boxes drag into a saved order; "Ungrouped" is always the wide box at the bottom.
-  Excel is demoted to a print-only export: the JSON backup is the real data safety net,
-  and all editing happens in the app. *(29 Aug)*
+  list. Boxes drag into a saved order; each box shows its people count, renames in
+  place (✎) and adds parties straight into the group; a party opens in a dialog with
+  "Move to Ungrouped" (stays invited) clearly separated from "Delete party" (gone).
+  "Ungrouped" is always the wide box at the bottom. Excel is demoted to a print-only
+  export: the JSON backup is the real data safety net, and all editing happens in the
+  app. *(29 Aug)*
+- **The laptop is now the real-data side** (Agil restored the live backup locally on
+  29 Aug — 244 parties / 401 people incl. the family's online edits). The live site
+  serves the homepage; its database is stale until the next backup → restore upward.
 - **English-only guest pages** for now. *(8 Aug)*
 - **Boring tech, no black box** (Agil's standing requirement): Next.js + Prisma + SQLite
   → Postgres, minimal dependencies, README as owner's manual, tests as the safety net. 

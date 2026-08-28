@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { btnGhost, btnPrimary, inputCls, rsvpPill } from "@/components/ui";
+import { btnGhost, btnPrimary, inputCls, Modal, rsvpPill } from "@/components/ui";
 import type { PartyView, ProgrammeOption } from "@/lib/party";
 import {
   deleteParty,
@@ -64,7 +64,8 @@ export function GuestsScreen({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<PartyDraft | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [showAdd, setShowAdd] = useState(false);
+  // Which group the "Add a party" dialog pre-fills ("" = none); null = closed.
+  const [addGroup, setAddGroup] = useState<string | null>(null);
   const [showGroups, setShowGroups] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   // Groups added on this screen that have no parties yet. They show in every
@@ -200,6 +201,21 @@ export function GuestsScreen({
     });
   }
 
+  // Distinct from deleting: the party stays on the guest list, just without
+  // a group — it moves to the "Ungrouped" box.
+  function ungroupParty() {
+    if (!draft) return;
+    const d = { ...draft, group: "Ungrouped" };
+    startTransition(async () => {
+      try {
+        await saveParty(d);
+        close();
+      } catch (e) {
+        alert(e instanceof Error ? e.message : "Could not move");
+      }
+    });
+  }
+
   function removeParty(p: PartyView) {
     if (!confirm(`Delete "${p.name}" and all its members? This cannot be undone.`))
       return;
@@ -255,7 +271,7 @@ export function GuestsScreen({
           <a href="/guests/export" className={btnGhost} title="A spreadsheet for printing or sharing — all editing happens here in the app">
             Excel (print)
           </a>
-          <button className={btnPrimary} onClick={() => setShowAdd((v) => !v)}>
+          <button className={btnPrimary} onClick={() => setAddGroup("")}>
             + Add party
           </button>
         </div>
@@ -269,12 +285,18 @@ export function GuestsScreen({
           onDone={() => setShowGroups(false)}
         />
       )}
-      {showAdd && (
-        <AddPartyPanel
-          groups={groups.map(([g]) => g)}
-          sides={sides}
-          onDone={() => setShowAdd(false)}
-        />
+      {addGroup !== null && (
+        <Modal
+          title={addGroup ? `Add a party to ${addGroup}` : "Add a party"}
+          onClose={() => setAddGroup(null)}
+        >
+          <AddPartyPanel
+            groups={groups.map(([g]) => g)}
+            sides={sides}
+            defaultGroup={addGroup}
+            onDone={() => setAddGroup(null)}
+          />
+        </Modal>
       )}
 
       <div className="flex flex-wrap gap-2">
@@ -442,13 +464,7 @@ export function GuestsScreen({
               const p = parties.find((x) => x.id === expandedId);
               if (!p) return null;
               return (
-                <div className="overflow-hidden rounded-2xl border border-rose-200 bg-white shadow-sm">
-                  <div className="flex items-center justify-between bg-rose-50 px-4 py-2.5">
-                    <p className="text-sm font-medium">{p.name}</p>
-                    <button className="text-sm text-stone-500 hover:underline" onClick={close}>
-                      close
-                    </button>
-                  </div>
+                <Modal title={p.name} onClose={close}>
                   <EditPanel
                     draft={draft}
                     setDraft={setDraft}
@@ -461,8 +477,9 @@ export function GuestsScreen({
                     onSave={save}
                     onCancel={close}
                     onDelete={() => removeParty(p)}
+                    onUngroup={ungroupParty}
                   />
-                </div>
+                </Modal>
               );
             })()}
           <GroupsBoard
@@ -473,17 +490,8 @@ export function GuestsScreen({
             parties={filtered}
             selected={selected}
             onToggleSelected={toggleSelected}
-            onOpen={(p) => {
-              if (expandedId === p.id) {
-                close();
-                return;
-              }
-              open(p);
-              // The edit form sits above the boxes — bring it into view.
-              requestAnimationFrame(() =>
-                window.scrollTo({ top: 0, behavior: "smooth" })
-              );
-            }}
+            onOpen={(p) => (expandedId === p.id ? close() : open(p))}
+            onAddParty={(g) => setAddGroup(g)}
             expandedId={expandedId}
           />
         </>
@@ -574,6 +582,7 @@ export function GuestsScreen({
                     onSave={save}
                     onCancel={close}
                     onDelete={() => removeParty(p)}
+                    onUngroup={ungroupParty}
                   />
                 )}
               </li>

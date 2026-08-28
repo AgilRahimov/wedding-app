@@ -7,10 +7,13 @@ import { addParty } from "./actions";
 export function AddPartyPanel({
   groups,
   sides,
+  defaultGroup = "",
   onDone,
 }: {
   groups: string[];
   sides: string[];
+  // Pre-filled when adding straight into a group's box.
+  defaultGroup?: string;
   onDone: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -33,17 +36,19 @@ export function AddPartyPanel({
   }
 
   return (
-    <form
-      action={submit}
-      className="flex flex-wrap items-end gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm"
-    >
+    <form action={submit} className="flex flex-wrap items-end gap-3 p-4">
       <label className="flex flex-col gap-1 text-xs font-medium text-stone-600">
         Main guest name *
         <input name="name" required className={`${inputCls} w-52`} />
       </label>
       <label className="flex flex-col gap-1 text-xs font-medium text-stone-600">
         Group
-        <input name="group" list="group-options-add" className={`${inputCls} w-40`} />
+        <input
+          name="group"
+          list="group-options-add"
+          defaultValue={defaultGroup}
+          className={`${inputCls} w-40`}
+        />
         <datalist id="group-options-add">
           {groups.map((g) => (
             <option key={g} value={g} />

@@ -10,7 +10,7 @@ export default async function GuestsPage() {
       include: {
         guests: { orderBy: [{ isPlusOne: "asc" }, { createdAt: "asc" }, { id: "asc" }] },
       },
-      orderBy: [{ group: "asc" }, { name: "asc" }],
+      orderBy: [{ group: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
     }),
     db.eventInfo.findUnique({ where: { id: 1 } }),
     db.programme.findMany({ orderBy: { sortOrder: "asc" } }),

@@ -23,6 +23,9 @@ model Household {
   token           String   @unique
   name            String
   group           String   @default("Ungrouped")
+  // Hand-arranged position inside its group's box (drag on the Guests screen);
+  // ties fall back to name order.
+  sortOrder       Int      @default(0)
   // Which side invited them: e.g. "Groom's family", "Bride's family", "Father's colleagues"
   side            String?
   via             String?

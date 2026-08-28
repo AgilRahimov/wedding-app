@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { inputCls, RsvpDot } from "@/components/ui";
 import type { PartyView } from "@/lib/party";
-import { renameGroup, saveGroupOrder } from "./actions";
+import { renameGroup, saveGroupOrder, savePartyOrder } from "./actions";
 
 /**
  * The boxes view of the guest list: one box per group, like the blocks of the
@@ -42,6 +42,10 @@ export function GroupsBoard({
   // Renaming a group right in its box header.
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  // Dragging one party up/down inside its group's box.
+  const [dragParty, setDragParty] = useState<{ id: string; group: string } | null>(null);
+  const [partyOrder, setPartyOrder] = useState<{ group: string; ids: string[] } | null>(null);
+  const partyOrderRef = useRef<string[] | null>(null);
 
   const propsOrder = orderedGroups.map(([g]) => g);
   const propsKey = propsOrder.join("|");
@@ -53,7 +57,7 @@ export function GroupsBoard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [propsKey]);
 
-  // The drop is caught at window level: reordering moves the dragged box in
+  // Drops are caught at window level: reordering moves the dragged element in
   // the DOM, which makes the browser drop its pointer capture — a pointerup
   // on the handle itself can silently never arrive.
   useEffect(() => {
@@ -70,6 +74,29 @@ export function GroupsBoard({
     };
   }, [dragging]);
 
+  useEffect(() => {
+    if (!dragParty) return;
+    const drop = () => {
+      setDragParty(null);
+      if (partyOrderRef.current) void savePartyOrder(partyOrderRef.current);
+    };
+    window.addEventListener("pointerup", drop);
+    window.addEventListener("pointercancel", drop);
+    return () => {
+      window.removeEventListener("pointerup", drop);
+      window.removeEventListener("pointercancel", drop);
+    };
+  }, [dragParty]);
+
+  // Once the server sends back the re-sorted list, the local drag order retires.
+  useEffect(() => {
+    if (!dragParty) {
+      setPartyOrder(null);
+      partyOrderRef.current = null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parties]);
+
   const order = localOrder ?? propsOrder;
   const totals = new Map(orderedGroups);
 
@@ -78,6 +105,43 @@ export function GroupsBoard({
     const list = byGroup.get(p.group) ?? [];
     list.push(p);
     byGroup.set(p.group, list);
+  }
+  if (partyOrder) {
+    const list = byGroup.get(partyOrder.group);
+    if (list) {
+      const pos = new Map(partyOrder.ids.map((id, i) => [id, i]));
+      byGroup.set(
+        partyOrder.group,
+        [...list].sort((a, b) => (pos.get(a.id) ?? 0) - (pos.get(b.id) ?? 0))
+      );
+    }
+  }
+
+  function startPartyDrag(e: React.PointerEvent, p: PartyView) {
+    e.preventDefault();
+    e.stopPropagation();
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    const ids = (byGroup.get(p.group) ?? []).map((x) => x.id);
+    partyOrderRef.current = ids;
+    setPartyOrder({ group: p.group, ids });
+    setDragParty({ id: p.id, group: p.group });
+  }
+
+  function movePartyDrag(e: React.PointerEvent, p: PartyView) {
+    if (dragParty?.id !== p.id) return;
+    const el = document
+      .elementFromPoint(e.clientX, e.clientY)
+      ?.closest?.("[data-party-id]");
+    const overId = el?.getAttribute("data-party-id");
+    if (!overId || overId === p.id) return;
+    if (el?.getAttribute("data-party-group") !== dragParty.group) return;
+    const list = partyOrderRef.current ?? [];
+    const to = list.indexOf(overId);
+    if (to < 0) return;
+    const rest = list.filter((x) => x !== p.id);
+    rest.splice(to, 0, p.id);
+    partyOrderRef.current = rest;
+    setPartyOrder({ group: dragParty.group, ids: rest });
   }
 
   function setOrder(list: string[]) {
@@ -142,15 +206,29 @@ export function GroupsBoard({
     );
   }
 
-  function partyRow(p: PartyView) {
+  function partyRow(p: PartyView, canReorder: boolean) {
     const open = expandedId === p.id;
+    const beingDragged = dragParty?.id === p.id;
     return (
       <li key={p.id}>
         <div
+          data-party-id={p.id}
+          data-party-group={p.group}
           className={`flex items-center gap-2.5 px-3 py-2 ${
-            open ? "bg-rose-50" : "hover:bg-stone-50"
+            beingDragged ? "bg-stone-100" : open ? "bg-rose-50" : "hover:bg-stone-50"
           }`}
         >
+          {canReorder && (
+            <span
+              onPointerDown={(e) => startPartyDrag(e, p)}
+              onPointerMove={(e) => movePartyDrag(e, p)}
+              title="Drag to change this party's place in the group"
+              className="cursor-grab select-none text-stone-300 active:cursor-grabbing"
+              style={{ touchAction: "none" }}
+            >
+              ⠿
+            </span>
+          )}
           <input
             type="checkbox"
             checked={selected.has(p.id)}
@@ -252,7 +330,9 @@ export function GroupsBoard({
           )}
         </header>
         <ul className="divide-y divide-stone-100">
-          {list.map(partyRow)}
+          {/* Reordering needs the whole group on screen — with a search or
+              filter hiding members, saved positions would come out scrambled. */}
+          {list.map((p) => partyRow(p, list.length === total))}
           {list.length === 0 && (
             <li className="px-3 py-4 text-xs text-stone-400">
               {g === "Ungrouped"

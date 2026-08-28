@@ -11,9 +11,11 @@ This app replaces `Spisok v2.xlsx`.
   anyone flying in. Two views, remembered per device: **List** (dense, for working
   through the list) and **Boxes** — one box per group, like the spreadsheet's blocks,
   made for arranging groups on an iPad. Drag a box's ⠿ handle to put related groups
-  next to each other (the order is saved for everyone); tick parties to move them to a
-  group or programme in one go. "Excel (print)" makes a spreadsheet for printing or
-  sharing — all editing happens in the app itself.
+  next to each other, and drag parties by their ⠿ handle to arrange them inside a group
+  (both orders are saved for everyone); tick parties to move them to a group or
+  programme in one go. "Print report" makes the paper version — a dashboard sheet, the
+  groups a few per A4 page in large type, and the still-to-seat list — and "Excel" a
+  spreadsheet; both are for printing/sharing only, all editing happens in the app itself.
 - **Seating** — the real Buta Palace floor plan (40 tables / 504 seats), with every
   chair drawn on the map. Pick a party in the queue, then click its table — the whole
   family is seated in one go (or open a party to seat people one by one). Pinch or use

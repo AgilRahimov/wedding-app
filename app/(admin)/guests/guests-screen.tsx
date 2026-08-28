@@ -268,8 +268,16 @@ export function GuestsScreen({
           <button className={btnGhost} onClick={() => setShowGroups((v) => !v)}>
             Manage groups
           </button>
+          <a
+            href="/print"
+            target="_blank"
+            className={btnGhost}
+            title="A paper report: dashboard, the groups, and the still-to-seat list"
+          >
+            Print report
+          </a>
           <a href="/guests/export" className={btnGhost} title="A spreadsheet for printing or sharing — all editing happens here in the app">
-            Excel (print)
+            Excel
           </a>
           <button className={btnPrimary} onClick={() => setAddGroup("")}>
             + Add party

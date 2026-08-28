@@ -103,6 +103,11 @@ edits in one place and the guest's page updates instantly.
 - **The laptop is now the real-data side** (Agil restored the live backup locally on
   29 Aug — 244 parties / 401 people incl. the family's online edits). The live site
   serves the homepage; its database is stale until the next backup → restore upward.
+- **Parties order by hand inside their group** (drag on the Boxes view; stored as
+  `Household.sortOrder`, ties fall back to A→Z), and a **printable report** at `/print`:
+  sheet 1 dashboard + groups overview, then the groups in the family's box order in
+  large type (~13pt, declined struck through, named companions beneath the party),
+  then the still-to-seat list on its own sheet. *(29 Aug)*
 - **English-only guest pages** for now. *(8 Aug)*
 - **Boring tech, no black box** (Agil's standing requirement): Next.js + Prisma + SQLite
   → Postgres, minimal dependencies, README as owner's manual, tests as the safety net. 

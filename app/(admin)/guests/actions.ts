@@ -218,6 +218,18 @@ export async function renameGroup(from: string, to: string) {
   refresh();
 }
 
+/** Remember how the family arranged the parties inside one group's box:
+ *  the given households get positions 0, 1, 2… in that order. */
+export async function savePartyOrder(householdIds: string[]) {
+  await requireAdminAction();
+  await db.$transaction(
+    householdIds.map((id, i) =>
+      db.household.update({ where: { id }, data: { sortOrder: i } })
+    )
+  );
+  refresh();
+}
+
 /** Remember how the family arranged the group boxes on the Guests screen. */
 export async function saveGroupOrder(order: string[]) {
   await requireAdminAction();

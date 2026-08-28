@@ -8,7 +8,7 @@ export default async function SeatingPage() {
     db.seatTable.findMany({ orderBy: { sortOrder: "asc" } }),
     db.household.findMany({
       include: { guests: { orderBy: [{ isPlusOne: "asc" }, { id: "asc" }] } },
-      orderBy: [{ group: "asc" }, { name: "asc" }],
+      orderBy: [{ group: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
     }),
     db.eventInfo.findUniqueOrThrow({ where: { id: 1 } }),
   ]);

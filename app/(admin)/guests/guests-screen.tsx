@@ -6,6 +6,7 @@ import type { PartyView, ProgrammeOption } from "@/lib/party";
 import {
   deleteParty,
   saveParty,
+  setGroupForParties,
   setInternationalForParties,
   setProgrammeForParties,
   type PartyDraft,
@@ -63,6 +64,10 @@ export function GuestsScreen({
   const [showAdd, setShowAdd] = useState(false);
   const [showGroups, setShowGroups] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Groups added on this screen that have no parties yet. They show in every
+  // dropdown so parties can be moved in; once one is, the group lives in the
+  // database like the rest.
+  const [newGroups, setNewGroups] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
 
   const programmeById = useMemo(
@@ -73,8 +78,9 @@ export function GuestsScreen({
   const groups = useMemo(() => {
     const counts = new Map<string, number>();
     for (const p of parties) counts.set(p.group, (counts.get(p.group) ?? 0) + 1);
+    for (const g of newGroups) if (!counts.has(g)) counts.set(g, 0);
     return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  }, [parties]);
+  }, [parties, newGroups]);
 
   const sides = useMemo(
     () => [...new Set(parties.map((p) => p.side).filter(Boolean))] as string[],
@@ -196,7 +202,14 @@ export function GuestsScreen({
         </div>
       </div>
 
-      {showGroups && <GroupsPanel groups={groups} onDone={() => setShowGroups(false)} />}
+      {showGroups && (
+        <GroupsPanel
+          groups={groups}
+          onCreated={(name) => setNewGroups((cur) => [...cur, name])}
+          onRemoveEmpty={(name) => setNewGroups((cur) => cur.filter((g) => g !== name))}
+          onDone={() => setShowGroups(false)}
+        />
+      )}
       {showAdd && (
         <AddPartyPanel
           groups={groups.map(([g]) => g)}
@@ -301,6 +314,33 @@ export function GuestsScreen({
                 {p.name} — {p.code}
               </option>
             ))}
+          </select>
+          <select
+            className={inputCls}
+            defaultValue=""
+            onChange={(e) => {
+              let group = e.target.value;
+              e.target.value = "";
+              if (!group) return;
+              if (group === "__new__") {
+                group = (prompt("Name for the new group:") ?? "").trim();
+                if (!group) return;
+              }
+              const ids = [...selected];
+              startTransition(async () => {
+                await setGroupForParties(ids, group);
+                setSelected(new Set());
+                setNewGroups((cur) => cur.filter((g) => g !== group));
+              });
+            }}
+          >
+            <option value="">Move to group…</option>
+            {groups.map(([g, n]) => (
+              <option key={g} value={g}>
+                {g} ({n})
+              </option>
+            ))}
+            <option value="__new__">＋ New group…</option>
           </select>
           <button
             className={btnGhost}

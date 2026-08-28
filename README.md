@@ -33,13 +33,22 @@ This app replaces `Spisok v2.xlsx`.
 
 ## The live site
 
-**https://wedding-app-mu-ten.vercel.app** — this is the real one. The family enters
-real data THERE (guests, phones, programmes, seating); it stores everything in the
-production database (Neon Postgres, Frankfurt). Every `git push` deploys the latest
-code to it automatically, applying any database migrations on the way.
+**https://wedding-app-mu-ten.vercel.app** — the public site guests see. It stores its
+data in the production database (Neon Postgres, Frankfurt). Every `git push` deploys
+the latest code to it automatically, applying any database migrations on the way —
+deploys never touch the data.
 
-The app on the laptop (below) is for development only — it has its own separate
-database, and changing data locally does NOT affect the live site.
+**Current working mode (since 29 Aug): local-first.** The live site stays up for the
+homepage; the app is being worked on and data-entered on the laptop until it is stable.
+The laptop and the live site each have their OWN database — data entered on one does
+not appear on the other. Moving the whole database between them is a two-step:
+
+1. On the copy that has the good data: Settings → **Download full backup (JSON)**.
+2. On the copy that should receive it: Settings → **Restore from a backup file** (or,
+   into the laptop's database: `npm run restore -- <file>`).
+
+Restore replaces everything, so enter data on ONE side at a time — whichever side is
+"the real one" right now — and move it wholesale when switching.
 
 ## Running it locally
 

@@ -180,6 +180,31 @@ export async function deleteParty(householdId: string) {
   refresh();
 }
 
+/** Move whole parties into a group — also how a brand-new group gets its
+ *  first members (groups are just names on parties; an empty one isn't stored). */
+export async function setGroupForParties(householdIds: string[], group: string) {
+  await requireAdminAction();
+  const name = group.trim();
+  if (!name) throw new Error("Give the group a name");
+  if (householdIds.length === 0) return;
+  await db.household.updateMany({
+    where: { id: { in: householdIds } },
+    data: { group: name },
+  });
+  refresh();
+}
+
+/** Remove a group: its parties go to "Ungrouped" (nobody is deleted). */
+export async function deleteGroup(name: string) {
+  await requireAdminAction();
+  const { count } = await db.household.updateMany({
+    where: { group: name },
+    data: { group: "Ungrouped" },
+  });
+  refresh();
+  return count;
+}
+
 export async function renameGroup(from: string, to: string) {
   await requireAdminAction();
   const target = to.trim();

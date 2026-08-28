@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/session";
 import { inputCls as input } from "@/components/ui";
 import { saveEventInfo } from "./actions";
 import { AdminsPanel } from "./admins-panel";
+import { RestorePanel } from "./restore-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -164,6 +165,37 @@ export default async function SettingsPage({
         admins={admins.map((a) => ({ id: a.id, name: a.name, email: a.email }))}
         selfId={session.adminId}
       />
+
+      <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+        <h2 className="font-medium">Backups</h2>
+        <p className="mt-1 text-sm text-stone-500">
+          Everything the family enters lives in this site&rsquo;s database and survives
+          every update. For extra peace of mind, download a copy any time — especially
+          after a big data-entry session.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-3">
+          <a
+            href="/settings/backup"
+            className="rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+          >
+            Download full backup (JSON)
+          </a>
+          <a
+            href="/guests/export"
+            className="rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+          >
+            Download guest list (Excel)
+          </a>
+          <RestorePanel />
+        </div>
+        <p className="mt-2 text-xs text-stone-400">
+          The JSON file is the complete database — guests, RSVPs, seating, programmes,
+          travel, hotels, event details. The Excel file is the same guest data in a
+          readable spreadsheet. &ldquo;Restore&rdquo; replaces everything here with a
+          backup file&rsquo;s contents — the way to move the whole database between the
+          laptop and the live site.
+        </p>
+      </div>
     </div>
   );
 }

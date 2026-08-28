@@ -84,6 +84,14 @@ edits in one place and the guest's page updates instantly.
   is drawn on the map, not a bookable table). Tables can be stretched to 13/14 seats from
   the table panel; extra chairs show in amber. A database that already has seated guests
   never gets its layout swapped by the seed. *(28 Aug)*
+- **Local-first working mode**: the live site stays up (homepage for guests is enough
+  for now); development and data entry happen on the laptop until things are stable.
+  The whole database moves between laptop and live via Settings → "Download full
+  backup" / "Restore from a backup file" — enter data on one side at a time. *(29 Aug)*
+- **Groups are managed on the Guests screen**: + New group, rename, delete (parties
+  fall back to "Ungrouped"), and a bulk "Move to group" for ticked parties. Azerbaijani
+  letters (Ə, Ü, Ş, Ç, Ğ, İ…) verified working in names, groups, search and the guest
+  pages. *(29 Aug)*
 - **English-only guest pages** for now. *(8 Aug)*
 - **Boring tech, no black box** (Agil's standing requirement): Next.js + Prisma + SQLite
   → Postgres, minimal dependencies, README as owner's manual, tests as the safety net. 

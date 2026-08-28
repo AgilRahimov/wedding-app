@@ -3,7 +3,7 @@
 *The project plan: what problem this solves, what is built, what is deferred, what was
 decided and why, and what is waiting on Agil. Update this file whenever a phase lands
 or a decision is made — it is the single source of truth for project status.*
-*(Last updated: 23 August 2026 — exactly 2 months before the wedding.)*
+*(Last updated: 28 August 2026 — 8 weeks before the wedding. The site is LIVE.)*
 
 ## The problem
 
@@ -39,8 +39,8 @@ edits in one place and the guest's page updates instantly.
 | 1 | Guest list + RSVP: dashboard, guests screen, settings, invite links | ✅ done 8 Aug |
 | 2 | Programmes (per-group day plans A/B/C), seating floor plan, public homepage | ✅ done 17–23 Aug |
 | 2.5 | Hardening: git + GitHub, 10-test smoke suite, refactor, moved out of iCloud | ✅ done 23 Aug |
-| 3 | **Deployment** — Vercel + Neon Postgres; pulled forward so the family can enter phones/groups/programmes from their own phones | 🔜 in progress |
-| 4 | Travel/hotels module — hotel list, room assignments, arrivals/departures board, transfer grouping; feeds Group C invitations | ⏳ after deploy |
+| 3 | Deployment — live at wedding-app-mu-ten.vercel.app (Vercel + Neon Postgres, both in Frankfurt); deploys automatically on every `git push` | ✅ done 28 Aug |
+| 4 | **Travel/hotels module** — hotel list, room assignments, arrivals/departures board, transfer grouping; feeds Group C invitations | 🔜 next build |
 | 5 | Activities — trips for out-of-town guests, sign-up via invite link | ⏳ after travel |
 
 ## Family to-do (the app is waiting on these)
@@ -54,9 +54,10 @@ edits in one place and the guest's page updates instantly.
 | Mark bride's / groom's side per party (optional, helps seating) | Guests | 0 set |
 | Replace remaining placeholder text (venue address detail, map link, welcome text) | Settings | partially placeholder |
 | Get the real room layout from Buta Palace, then drag tables to match | Seating → Move tables | placeholder layout |
-| **Clear the test data** (Yashar Aliyev & Ilya Briskman carry fake RSVPs, seats, flights) | ask Claude | ❗ before real use |
+| **Change the admin password** (still the seed default) | live site → Settings | ❗ urgent — site is public now |
+| Re-add Ilya Briskman's +1 (his wife) on the live site | Guests → open party → Add member | 1 minute |
 | Seat the room | Seating | 2 of 387 |
-| Send invitations (WhatsApp, per party) | Guests → Copy invite | not started — needs deployment first |
+| Send invitations (WhatsApp, per party) | Guests → Copy invite | waits for travel module |
 
 ## Decisions made (and why)
 

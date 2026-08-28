@@ -29,7 +29,17 @@ This app replaces `Spisok v2.xlsx`.
 
 **Project plan, phase statuses, decisions and open questions live in [ROADMAP.md](ROADMAP.md).**
 
-## Running it
+## The live site
+
+**https://wedding-app-mu-ten.vercel.app** — this is the real one. The family enters
+real data THERE (guests, phones, programmes, seating); it stores everything in the
+production database (Neon Postgres, Frankfurt). Every `git push` deploys the latest
+code to it automatically, applying any database migrations on the way.
+
+The app on the laptop (below) is for development only — it has its own separate
+database, and changing data locally does NOT affect the live site.
+
+## Running it locally
 
 ```bash
 npm run dev

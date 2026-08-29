@@ -43,6 +43,13 @@ export async function saveParty(draft: PartyDraft) {
   await requireAdminAction();
 
   if (!draft.name.trim()) throw new Error("Party name cannot be empty");
+  const group = draft.group.trim() || "Ungrouped";
+  // Moving to a different group? The party joins that box at the bottom.
+  const current = await db.household.findUniqueOrThrow({
+    where: { id: draft.id },
+    select: { group: true },
+  });
+  const sortOrder = current.group === group ? undefined : await bottomOfGroup(group);
   const members = draft.members
     .map((m) => ({
       ...m,
@@ -58,7 +65,8 @@ export async function saveParty(draft: PartyDraft) {
       where: { id: draft.id },
       data: {
         name: draft.name.trim(),
-        group: draft.group.trim() || "Ungrouped",
+        group,
+        sortOrder,
         side: draft.side?.trim() || null,
         phone: draft.phone?.trim() || null,
         notes: draft.notes?.trim() || null,
@@ -110,6 +118,17 @@ export async function setGuestRsvp(guestId: string, rsvp: string) {
   refresh();
 }
 
+/** A party arriving in a group joins at the bottom of its box, after
+ *  whatever hand-arranged order is already there. */
+async function bottomOfGroup(group: string) {
+  const last = await db.household.findFirst({
+    where: { group },
+    orderBy: { sortOrder: "desc" },
+    select: { sortOrder: true },
+  });
+  return (last?.sortOrder ?? -1) + 1;
+}
+
 /** Put a batch of parties on one programme — the only sane way to sort 234 of them. */
 export async function setProgrammeForParties(
   householdIds: string[],
@@ -150,12 +169,14 @@ export async function addParty(input: {
   if (!name) throw new Error("Name is required");
   const plusOnes = Math.max(0, Math.min(10, Math.floor(input.plusOnes || 0)));
   const fallback = await db.programme.findFirst({ where: { isDefault: true } });
+  const group = input.group.trim() || "Ungrouped";
 
   await db.household.create({
     data: {
       token: randomBytes(9).toString("base64url"),
       name,
-      group: input.group.trim() || "Ungrouped",
+      group,
+      sortOrder: await bottomOfGroup(group),
       side: input.side?.trim() || null,
       phone: input.phone?.trim() || null,
       programmeId: fallback?.id ?? null,
@@ -189,7 +210,8 @@ export async function setGroupForParties(householdIds: string[], group: string) 
   if (householdIds.length === 0) return;
   await db.household.updateMany({
     where: { id: { in: householdIds } },
-    data: { group: name },
+    // All arrive at the bottom of the box together (A→Z among themselves).
+    data: { group: name, sortOrder: await bottomOfGroup(name) },
   });
   refresh();
 }
@@ -199,7 +221,7 @@ export async function deleteGroup(name: string) {
   await requireAdminAction();
   const { count } = await db.household.updateMany({
     where: { group: name },
-    data: { group: "Ungrouped" },
+    data: { group: "Ungrouped", sortOrder: await bottomOfGroup("Ungrouped") },
   });
   await editGroupOrder((order) => order.filter((g) => g !== name));
   refresh();

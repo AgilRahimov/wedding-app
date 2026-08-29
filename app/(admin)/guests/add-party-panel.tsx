@@ -59,11 +59,11 @@ export function AddPartyPanel({
         Side
         <input name="side" list="side-options-add" className={`${inputCls} w-40`} />
         <datalist id="side-options-add">
-          {sides.map((s) => (
+          {/* The two standard suggestions, then any other side already in use —
+              deduplicated, so "Groom's side" never appears twice. */}
+          {[...new Set(["Groom's side", "Bride's side", ...sides])].map((s) => (
             <option key={s} value={s} />
           ))}
-          <option value="Groom's side" />
-          <option value="Bride's side" />
         </datalist>
       </label>
       <label className="flex flex-col gap-1 text-xs font-medium text-stone-600">

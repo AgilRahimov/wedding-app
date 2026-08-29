@@ -78,11 +78,9 @@ export function EditPanel({
             onChange={(e) => set({ side: e.target.value || null })}
           />
           <datalist id="side-options">
-            {sides.map((s) => (
+            {[...new Set(["Groom's side", "Bride's side", ...sides])].map((s) => (
               <option key={s} value={s} />
             ))}
-            <option value="Groom's side" />
-            <option value="Bride's side" />
           </datalist>
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-stone-600">

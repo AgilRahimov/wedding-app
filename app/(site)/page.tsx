@@ -308,7 +308,7 @@ export default async function HomePage() {
           )}
           <a
             href="/dashboard"
-            className="mt-4 text-[11px] uppercase tracking-[0.2em] text-white/25 transition hover:text-white/50"
+            className="mt-5 rounded-full border border-[var(--gold)]/50 px-7 py-3 text-[13px] uppercase tracking-[0.22em] text-[var(--gold-bright)] transition hover:border-[var(--gold)] hover:bg-[var(--gold)]/10"
           >
             Family sign-in
           </a>

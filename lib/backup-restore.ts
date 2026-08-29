@@ -18,6 +18,37 @@ export type Backup = {
   activities?: (Row & { signups?: Row[] })[];
 };
 
+/** The whole database as one plain object — the downloaded backup file,
+ *  and the daily snapshot kept for rolling back. */
+export async function buildBackup(db2: Db): Promise<Backup> {
+  const [eventInfo, programmes, hotels, tables, households, activities] =
+    await Promise.all([
+      db2.eventInfo.findUnique({ where: { id: 1 } }),
+      db2.programme.findMany({
+        include: { items: { orderBy: { sortOrder: "asc" } } },
+        orderBy: { sortOrder: "asc" },
+      }),
+      db2.hotel.findMany(),
+      db2.seatTable.findMany({ orderBy: { sortOrder: "asc" } }),
+      db2.household.findMany({
+        include: { guests: { orderBy: [{ isPlusOne: "asc" }, { id: "asc" }] } },
+        orderBy: [{ group: "asc" }, { sortOrder: "asc" }, { name: "asc" }],
+      }),
+      db2.activity.findMany({ include: { signups: true } }),
+    ]);
+  return {
+    format: "wedding-app-backup",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    eventInfo,
+    programmes,
+    hotels,
+    tables,
+    households,
+    activities,
+  } as unknown as Backup;
+}
+
 export function isBackup(x: unknown): x is Backup {
   return (
     !!x &&

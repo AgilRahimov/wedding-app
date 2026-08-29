@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SignJWT, jwtVerify } from "jose";
+import { ensureDailySnapshot } from "./audit";
 import { db } from "./db";
 
 const COOKIE = "wedding_session";
@@ -36,20 +37,37 @@ export async function getSession(): Promise<Session | null> {
 }
 
 /** Auth boundary for admin pages: redirects to /login when not signed in. */
-export async function requireAdmin(): Promise<Session> {
+export async function requireAdmin(): Promise<Session & { role: string }> {
   const s = await getSession();
   if (!s) redirect("/login");
   const admin = await db.adminUser.findUnique({ where: { id: s.adminId } });
   if (!admin) redirect("/login");
-  return s;
+  return { ...s, role: admin.role };
 }
 
-/** Auth boundary for server actions: throws instead of redirecting. */
-export async function requireAdminAction(): Promise<Session> {
+/** Auth boundary for server actions: throws instead of redirecting.
+ *  Every admin change passes through here, so this is also where the
+ *  day's first change triggers the daily rollback snapshot. */
+export async function requireAdminAction(): Promise<Session & { role: string }> {
   const s = await getSession();
   if (!s) throw new Error("Not signed in");
   const admin = await db.adminUser.findUnique({ where: { id: s.adminId } });
   if (!admin) throw new Error("Not signed in");
+  await ensureDailySnapshot();
+  return { ...s, role: admin.role };
+}
+
+/** Pages only the owner (Agil) may open — Settings. Others land on the dashboard. */
+export async function requireOwner(): Promise<Session & { role: string }> {
+  const s = await requireAdmin();
+  if (s.role !== "owner") redirect("/dashboard");
+  return s;
+}
+
+/** Server actions and routes only the owner may run. */
+export async function requireOwnerAction(): Promise<Session & { role: string }> {
+  const s = await requireAdminAction();
+  if (s.role !== "owner") throw new Error("Only the owner can do this");
   return s;
 }
 

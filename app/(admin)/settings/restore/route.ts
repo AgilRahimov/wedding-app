@@ -1,7 +1,8 @@
 import { revalidatePath } from "next/cache";
+import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { applyBackup, isBackup } from "@/lib/backup-restore";
-import { getSession } from "@/lib/session";
+import { requireOwnerAction } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -11,8 +12,14 @@ export const dynamic = "force-dynamic";
 // live site) in one step. The button that calls this asks for confirmation;
 // family sign-in accounts are never touched.
 export async function POST(request: Request) {
-  if (!(await getSession())) {
-    return Response.json({ error: "Please sign in again." }, { status: 401 });
+  let session;
+  try {
+    session = await requireOwnerAction();
+  } catch {
+    return Response.json(
+      { error: "Only the owner can restore a backup. Please sign in as the owner." },
+      { status: 403 }
+    );
   }
 
   let backup: unknown;
@@ -39,6 +46,10 @@ export async function POST(request: Request) {
     timeout: 60_000,
   });
 
+  await logAction(
+    session.name,
+    `restored the database from a backup file${backup.exportedAt ? ` of ${String(backup.exportedAt).slice(0, 10)}` : ""}`
+  );
   revalidatePath("/", "layout");
   return Response.json({ ok: true, exportedAt: backup.exportedAt ?? null, ...counts });
 }

@@ -1,9 +1,10 @@
 import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/session";
+import { requireOwner } from "@/lib/session";
 import { inputCls as input } from "@/components/ui";
 import { saveEventInfo } from "./actions";
 import { AdminsPanel } from "./admins-panel";
 import { RestorePanel } from "./restore-panel";
+import { SnapshotsPanel } from "./snapshots-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -49,12 +50,36 @@ export default async function SettingsPage({
 }: {
   searchParams: Promise<{ saved?: string }>;
 }) {
-  const session = await requireAdmin();
-  const [info, admins, { saved }] = await Promise.all([
+  // Settings is the owner's room: wedding details, sign-ins, backups, roll-back.
+  const session = await requireOwner();
+  const [info, admins, snapshots, { saved }] = await Promise.all([
     db.eventInfo.findUniqueOrThrow({ where: { id: 1 } }),
     db.adminUser.findMany({ orderBy: { createdAt: "asc" } }),
+    db.snapshot.findMany({ orderBy: { at: "desc" } }),
     searchParams,
   ]);
+
+  const snapshotList = snapshots.map((s) => {
+    let counts = "";
+    try {
+      const b = JSON.parse(s.data);
+      const guests = (b.households ?? []).reduce(
+        (n: number, h: { guests?: unknown[] }) => n + (h.guests?.length ?? 0),
+        0
+      );
+      counts = ` — ${b.households?.length ?? 0} parties / ${guests} guests`;
+    } catch {}
+    return {
+      id: s.id,
+      label:
+        s.at.toLocaleString("en-GB", {
+          day: "numeric",
+          month: "long",
+          hour: "2-digit",
+          minute: "2-digit",
+        }) + counts,
+    };
+  });
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
@@ -162,7 +187,7 @@ export default async function SettingsPage({
       </form>
 
       <AdminsPanel
-        admins={admins.map((a) => ({ id: a.id, name: a.name, email: a.email }))}
+        admins={admins.map((a) => ({ id: a.id, name: a.name, email: a.email, role: a.role }))}
         selfId={session.adminId}
       />
 
@@ -190,6 +215,8 @@ export default async function SettingsPage({
           is just a spreadsheet for printing — all editing happens in the app.)
         </p>
       </div>
+
+      <SnapshotsPanel snapshots={snapshotList} />
     </div>
   );
 }

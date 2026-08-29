@@ -25,9 +25,10 @@ test("a guest can RSVP through their invite link and the family sees it", async 
   expect(household.respondedAt).not.toBeNull();
   expect(household.rsvpNote).toBe("Smoke-test message");
 
-  // …and visible on the family's side
+  // …and visible on the family's side (the List view shows the replied mark)
   await signIn(page);
   await page.goto("/guests");
+  await page.getByRole("button", { name: "List", exact: true }).click();
   await page.getByPlaceholder("Search name or phone…").fill(f.partyName);
   await expect(page.getByText("replied ✓").first()).toBeVisible();
 });
@@ -36,6 +37,7 @@ test("admins can set an RSVP from the guests screen", async ({ page }) => {
   const f = fixtures();
   await signIn(page);
   await page.goto("/guests");
+  await page.getByRole("button", { name: "List", exact: true }).click();
   await page.getByPlaceholder("Search name or phone…").fill(f.partyName);
   await page.getByText(f.partyName, { exact: true }).first().click();
   // the segmented control in the edit panel

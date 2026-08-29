@@ -13,7 +13,7 @@ export function AdminsPanel({
   admins,
   selfId,
 }: {
-  admins: { id: string; name: string; email: string }[];
+  admins: { id: string; name: string; email: string; role: string }[];
   selfId: string;
 }) {
   const [addState, addAction, addPending] = useActionState<FormState, FormData>(
@@ -43,7 +43,8 @@ export function AdminsPanel({
       <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
         <h2 className="font-medium">Family access</h2>
         <p className="mt-1 text-sm text-stone-500">
-          Everyone here can see and edit everything.
+          Everyone here can edit the guests, seating and programmes, and see History.
+          Settings — this page, with backups and roll-back — is yours alone.
         </p>
         <ul className="mt-3 divide-y divide-stone-100">
           {admins.map((a) => (
@@ -51,6 +52,11 @@ export function AdminsPanel({
               <span>
                 <span className="font-medium">{a.name}</span>{" "}
                 <span className="text-stone-500">· {a.email}</span>
+                {a.role === "owner" && (
+                  <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+                    owner
+                  </span>
+                )}
                 {a.id === selfId && (
                   <span className="ml-2 rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-500">
                     you

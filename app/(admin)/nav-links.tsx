@@ -9,14 +9,16 @@ const LINKS = [
   { href: "/guests", label: "Guests" },
   { href: "/seating", label: "Seating" },
   { href: "/programmes", label: "Programmes" },
-  { href: "/settings", label: "Settings" },
+  { href: "/history", label: "History" },
+  // Settings is the owner's room — everyone else doesn't even see the door.
+  { href: "/settings", label: "Settings", ownerOnly: true },
 ];
 
-export function NavLinks() {
+export function NavLinks({ isOwner }: { isOwner: boolean }) {
   const pathname = usePathname();
   return (
     <nav className="flex items-center gap-1">
-      {LINKS.map(({ href, label }) => {
+      {LINKS.filter((l) => !l.ownerOnly || isOwner).map(({ href, label }) => {
         const active = pathname.startsWith(href);
         return (
           <Link

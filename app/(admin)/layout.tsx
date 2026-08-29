@@ -21,7 +21,7 @@ export default async function AdminLayout({
             <Link href="/dashboard" className="font-semibold tracking-tight">
               Wedding&nbsp;HQ
             </Link>
-            <NavLinks />
+            <NavLinks isOwner={session.role === "owner"} />
           </div>
           <div className="flex items-center gap-3 text-sm">
             <span className="hidden text-stone-500 sm:inline">{session.name}</span>

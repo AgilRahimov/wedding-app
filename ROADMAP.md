@@ -108,6 +108,14 @@ edits in one place and the guest's page updates instantly.
   sheet 1 dashboard + groups overview, then the groups in the family's box order in
   large type (~13pt, declined struck through, named companions beneath the party),
   then the still-to-seat list on its own sheet. *(29 Aug)*
+- **Roles, history and roll-back** *(29 Aug)*: Agil's account is the **owner** — the
+  only one who sees Settings (wedding details, sign-ins, backups, roll-back); everyone
+  else is an **editor** (edits guests/seating/programmes, sees History). Every change —
+  including guests' own replies — writes a line to the **History** page. The first
+  change of each day stores a full **snapshot** (last 14 kept); the owner can roll the
+  whole database back to any of them from Settings. Per-action undo was deliberately
+  skipped (complexity ≫ value); History + roll-back is the chosen combination. The
+  Guests screen now opens in the **Boxes view** by default.
 - **English-only guest pages** for now. *(8 Aug)*
 - **Boring tech, no black box** (Agil's standing requirement): Next.js + Prisma + SQLite
   → Postgres, minimal dependencies, README as owner's manual, tests as the safety net. 

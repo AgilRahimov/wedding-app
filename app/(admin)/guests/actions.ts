@@ -2,6 +2,7 @@
 
 import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
+import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { requireAdminAction } from "@/lib/session";
 
@@ -40,7 +41,7 @@ function refresh() {
 }
 
 export async function saveParty(draft: PartyDraft) {
-  await requireAdminAction();
+  const session = await requireAdminAction();
 
   if (!draft.name.trim()) throw new Error("Party name cannot be empty");
   const group = draft.group.trim() || "Ungrouped";
@@ -108,13 +109,15 @@ export async function saveParty(draft: PartyDraft) {
     }
   });
 
+  await logAction(session.name, `edited party “${draft.name.trim()}” (${members.length} ${members.length === 1 ? "person" : "people"}, group ${group})`);
   refresh();
 }
 
 export async function setGuestRsvp(guestId: string, rsvp: string) {
-  await requireAdminAction();
+  const session = await requireAdminAction();
   if (!RSVP_VALUES.has(rsvp)) throw new Error("Bad RSVP value");
-  await db.guest.update({ where: { id: guestId }, data: { rsvp } });
+  const g = await db.guest.update({ where: { id: guestId }, data: { rsvp } });
+  await logAction(session.name, `set ${g.name}’s reply to “${rsvp}”`);
   refresh();
 }
 
@@ -134,12 +137,17 @@ export async function setProgrammeForParties(
   householdIds: string[],
   programmeId: string
 ) {
-  await requireAdminAction();
+  const session = await requireAdminAction();
   if (householdIds.length === 0) return;
   await db.household.updateMany({
     where: { id: { in: householdIds } },
     data: { programmeId },
   });
+  const prog = await db.programme.findUnique({ where: { id: programmeId } });
+  await logAction(
+    session.name,
+    `put ${householdIds.length} ${householdIds.length === 1 ? "party" : "parties"} on programme ${prog?.name ?? "?"}`
+  );
   refresh();
 }
 
@@ -148,12 +156,16 @@ export async function setInternationalForParties(
   householdIds: string[],
   isInternational: boolean
 ) {
-  await requireAdminAction();
+  const session = await requireAdminAction();
   if (householdIds.length === 0) return;
   await db.household.updateMany({
     where: { id: { in: householdIds } },
     data: { isInternational },
   });
+  await logAction(
+    session.name,
+    `marked ${householdIds.length} ${householdIds.length === 1 ? "party" : "parties"} as ${isInternational ? "travelling from abroad" : "not from abroad"}`
+  );
   refresh();
 }
 
@@ -164,7 +176,7 @@ export async function addParty(input: {
   phone: string | null;
   plusOnes: number;
 }) {
-  await requireAdminAction();
+  const session = await requireAdminAction();
   const name = input.name.trim();
   if (!name) throw new Error("Name is required");
   const plusOnes = Math.max(0, Math.min(10, Math.floor(input.plusOnes || 0)));
@@ -191,20 +203,28 @@ export async function addParty(input: {
       },
     },
   });
+  await logAction(session.name, `added party “${name}” (${1 + plusOnes} ${plusOnes === 0 ? "person" : "people"}, group ${group})`);
   refresh();
 }
 
 export async function deleteParty(householdId: string) {
-  await requireAdminAction();
+  const session = await requireAdminAction();
   // Guests are removed automatically (onDelete: Cascade in the schema).
-  await db.household.delete({ where: { id: householdId } });
+  const h = await db.household.delete({
+    where: { id: householdId },
+    include: { guests: { select: { id: true } } },
+  });
+  await logAction(
+    session.name,
+    `deleted party “${h.name}” and its ${h.guests.length} ${h.guests.length === 1 ? "guest" : "guests"}`
+  );
   refresh();
 }
 
 /** Move whole parties into a group — also how a brand-new group gets its
  *  first members (groups are just names on parties; an empty one isn't stored). */
 export async function setGroupForParties(householdIds: string[], group: string) {
-  await requireAdminAction();
+  const session = await requireAdminAction();
   const name = group.trim();
   if (!name) throw new Error("Give the group a name");
   if (householdIds.length === 0) return;
@@ -213,23 +233,28 @@ export async function setGroupForParties(householdIds: string[], group: string) 
     // All arrive at the bottom of the box together (A→Z among themselves).
     data: { group: name, sortOrder: await bottomOfGroup(name) },
   });
+  await logAction(
+    session.name,
+    `moved ${householdIds.length} ${householdIds.length === 1 ? "party" : "parties"} to group ${name}`
+  );
   refresh();
 }
 
 /** Remove a group: its parties go to "Ungrouped" (nobody is deleted). */
 export async function deleteGroup(name: string) {
-  await requireAdminAction();
+  const session = await requireAdminAction();
   const { count } = await db.household.updateMany({
     where: { group: name },
     data: { group: "Ungrouped", sortOrder: await bottomOfGroup("Ungrouped") },
   });
   await editGroupOrder((order) => order.filter((g) => g !== name));
+  await logAction(session.name, `deleted group ${name} (${count} ${count === 1 ? "party" : "parties"} moved to Ungrouped)`);
   refresh();
   return count;
 }
 
 export async function renameGroup(from: string, to: string) {
-  await requireAdminAction();
+  const session = await requireAdminAction();
   const target = to.trim();
   if (!target) throw new Error("Group name cannot be empty");
   await db.household.updateMany({
@@ -237,28 +262,32 @@ export async function renameGroup(from: string, to: string) {
     data: { group: target },
   });
   await editGroupOrder((order) => order.map((g) => (g === from ? target : g)));
+  await logAction(session.name, `renamed group ${from} to ${target}`);
   refresh();
 }
 
 /** Remember how the family arranged the parties inside one group's box:
  *  the given households get positions 0, 1, 2… in that order. */
 export async function savePartyOrder(householdIds: string[]) {
-  await requireAdminAction();
+  const session = await requireAdminAction();
   await db.$transaction(
     householdIds.map((id, i) =>
       db.household.update({ where: { id }, data: { sortOrder: i } })
     )
   );
+  const first = await db.household.findUnique({ where: { id: householdIds[0] } });
+  await logAction(session.name, `rearranged the parties in group ${first?.group ?? "?"}`);
   refresh();
 }
 
 /** Remember how the family arranged the group boxes on the Guests screen. */
 export async function saveGroupOrder(order: string[]) {
-  await requireAdminAction();
+  const session = await requireAdminAction();
   await db.eventInfo.update({
     where: { id: 1 },
     data: { groupOrder: JSON.stringify(order) },
   });
+  await logAction(session.name, "rearranged the group boxes");
   refresh();
 }
 

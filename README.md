@@ -26,7 +26,12 @@ This app replaces `Spisok v2.xlsx`.
   Group A gathers at the groom's house and travels in convoy, Group B comes straight to
   the venue, Group C is flying in and gets the whole visit. Each party is on one programme
   and sees only that timetable.
-- **Settings** — the wedding details guests see, plus family sign-in accounts.
+- **History** — who changed what, newest first, including guests' own replies. Every
+  admin can see it; searchable and filterable by person.
+- **Settings** — **owner only (Agil)**: the wedding details guests see, family sign-in
+  accounts (everyone else is an editor — they don't see this page), backups/restore,
+  and **Roll back** — the app snapshots the whole database at each day's first change
+  (last 14 kept), and any snapshot can be restored wholesale if a session goes wrong.
 
 **The guests' side** (no sign-in):
 

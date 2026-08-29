@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { requireAdminAction } from "@/lib/session";
 
@@ -22,7 +23,7 @@ export async function saveProgramme(
   values: { name: string; title: string; summary: string },
   items: ItemDraft[]
 ) {
-  await requireAdminAction();
+  const session = await requireAdminAction();
   if (!values.name.trim()) throw new Error("The programme needs a name");
 
   const clean = items
@@ -64,11 +65,12 @@ export async function saveProgramme(
     }
   });
 
+  await logAction(session.name, `edited a programme’s timetable`);
   refresh();
 }
 
 export async function addProgramme(code: string, name: string, title: string) {
-  await requireAdminAction();
+  const session = await requireAdminAction();
   const trimmed = code.trim().toUpperCase();
   if (!trimmed) throw new Error("Give the programme a short code, like D");
   if (await db.programme.findUnique({ where: { code: trimmed } }))
@@ -83,11 +85,12 @@ export async function addProgramme(code: string, name: string, title: string) {
       sortOrder: count,
     },
   });
+  await logAction(session.name, `added programme ${name.trim()}`);
   refresh();
 }
 
 export async function deleteProgramme(programmeId: string) {
-  await requireAdminAction();
+  const session = await requireAdminAction();
   const fallback = await db.programme.findFirst({
     where: { isDefault: true, NOT: { id: programmeId } },
   });
@@ -100,15 +103,17 @@ export async function deleteProgramme(programmeId: string) {
     data: { programmeId: fallback.id },
   });
   await db.programme.delete({ where: { id: programmeId } });
+  await logAction(session.name, `deleted a programme`);
   refresh();
 }
 
 /** The programme new parties get, and the fallback when one is deleted. */
 export async function setDefaultProgramme(programmeId: string) {
-  await requireAdminAction();
+  const session = await requireAdminAction();
   await db.$transaction([
     db.programme.updateMany({ data: { isDefault: false } }),
     db.programme.update({ where: { id: programmeId }, data: { isDefault: true } }),
   ]);
+  await logAction(session.name, `changed the default programme`);
   refresh();
 }

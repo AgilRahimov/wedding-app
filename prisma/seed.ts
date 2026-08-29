@@ -25,10 +25,19 @@ function inviteToken() {
 
 async function seedAdmin() {
   const email = "agil_93@hotmail.com";
-  if (await prisma.adminUser.findUnique({ where: { email } })) return;
+  const existing = await prisma.adminUser.findUnique({ where: { email } });
+  if (existing) {
+    // Agil is the owner — the only one who can open Settings. Kept in step
+    // here so a database from before roles existed gets it on deploy.
+    if (existing.role !== "owner") {
+      await prisma.adminUser.update({ where: { email }, data: { role: "owner" } });
+      console.log(`Made ${email} the owner.`);
+    }
+    return;
+  }
   const password = process.env.SEED_ADMIN_PASSWORD ?? "toy2026!";
   await prisma.adminUser.create({
-    data: { email, name: "Agil", passwordHash: await bcrypt.hash(password, 10) },
+    data: { email, name: "Agil", role: "owner", passwordHash: await bcrypt.hash(password, 10) },
   });
   console.log(`Created admin ${email} (password: ${password})`);
 }

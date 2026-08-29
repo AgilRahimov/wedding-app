@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { ensureDailySnapshot, logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
 import { rsvpIsClosed } from "./deadline";
 
@@ -37,6 +38,10 @@ export async function submitRsvp(
   }
 
   const own = new Map(household.guests.map((g) => [g.id, g]));
+
+  // Guest replies change the data too, so they get the same daily safety
+  // snapshot as the family's own edits.
+  await ensureDailySnapshot();
 
   await db.$transaction(async (tx) => {
     // Children the party removed from the form are removed here too —
@@ -84,6 +89,13 @@ export async function submitRsvp(
       data: { respondedAt: new Date(), rsvpNote: note.trim() || null },
     });
   });
+
+  const coming = members.filter((m) => m.attending === "yes").length;
+  const declined = members.filter((m) => m.attending === "no").length;
+  await logAction(
+    `Guest · ${household.name}`,
+    `replied to the invitation (${coming} coming, ${declined} declined)`
+  );
 
   revalidatePath(`/invite/${token}`);
   revalidatePath("/guests");

@@ -12,7 +12,26 @@ model AdminUser {
   email        String   @unique
   name         String
   passwordHash String
+  // "owner" (Agil) can open Settings, manage sign-ins, restore backups;
+  // "editor" (the rest of the family) edits guests/seating and sees History.
+  role         String   @default("editor")
   createdAt    DateTime @default(now())
+}
+
+// One line per change an admin (or a replying guest) made — the History page.
+model AuditLog {
+  id      String   @id @default(cuid())
+  at      DateTime @default(now())
+  who     String
+  summary String
+}
+
+// A daily copy of the whole database (same JSON as a downloaded backup),
+// kept so the family can roll back to a recent day from Settings.
+model Snapshot {
+  id   String   @id @default(cuid())
+  at   DateTime @default(now())
+  data String
 }
 
 // A household/party = the unit that receives one invite link.

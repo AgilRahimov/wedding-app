@@ -72,15 +72,15 @@ export function GuestsScreen({
   // dropdown so parties can be moved in; once one is, the group lives in the
   // database like the rest.
   const [newGroups, setNewGroups] = useState<string[]>([]);
-  // "list" is the dense working view; "boxes" shows one box per group, like
-  // the spreadsheet's blocks — the view made for arranging groups on an iPad.
-  // Each device remembers which view it last used.
-  const [view, setView] = useState<"list" | "boxes">("list");
+  // "boxes" (the default) shows one box per group, like the spreadsheet's
+  // blocks — the view made for arranging groups on an iPad. "list" is the
+  // dense working view. Each device remembers which it last used.
+  const [view, setView] = useState<"list" | "boxes">("boxes");
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     try {
-      if (localStorage.getItem("guestsView") === "boxes") setView("boxes");
+      if (localStorage.getItem("guestsView") === "list") setView("list");
     } catch {}
   }, []);
 

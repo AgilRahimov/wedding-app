@@ -49,12 +49,14 @@ export function GuestsScreen({
   coupleNames,
   weddingDate,
   savedGroupOrder,
+  groupPlanRev,
 }: {
   parties: PartyView[];
   programmes: ProgrammeOption[];
   coupleNames: string;
   weddingDate: string;
   savedGroupOrder: string;
+  groupPlanRev: number;
 }) {
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState("all");
@@ -492,6 +494,7 @@ export function GuestsScreen({
             })()}
           <GroupsBoard
             orderedGroups={orderedGroups}
+            groupPlanRev={groupPlanRev}
             ungroupedTotal={ungroupedTotal}
             groupFilter={groupFilter}
             onGroupFilter={setGroupFilter}

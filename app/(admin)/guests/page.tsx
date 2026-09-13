@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { groupingRevision, orderGroupNames } from "@/lib/grouping";
 import { toPartyView } from "@/lib/party";
 import { GuestsScreen } from "./guests-screen";
 
@@ -16,6 +17,22 @@ export default async function GuestsPage() {
     db.programme.findMany({ orderBy: { sortOrder: "asc" } }),
   ]);
 
+  // The grouping plan's revision — same calculation the print report uses, so
+  // the number on this screen always matches what a fresh printout would say.
+  const named = orderGroupNames(
+    [...new Set(households.map((h) => h.group))].filter((g) => g !== "Ungrouped"),
+    eventInfo?.groupOrder ?? ""
+  );
+  const ordered = households.some((h) => h.group === "Ungrouped")
+    ? [...named, "Ungrouped"]
+    : named;
+  const groupPlanRev = await groupingRevision(
+    ordered.map((g) => ({
+      name: g,
+      householdIds: households.filter((h) => h.group === g).map((h) => h.id),
+    }))
+  );
+
   return (
     <GuestsScreen
       parties={households.map(toPartyView)}
@@ -23,6 +40,7 @@ export default async function GuestsPage() {
       coupleNames={eventInfo?.coupleNames ?? ""}
       weddingDate={eventInfo?.weddingDate ?? ""}
       savedGroupOrder={eventInfo?.groupOrder ?? ""}
+      groupPlanRev={groupPlanRev}
     />
   );
 }

@@ -14,6 +14,7 @@ import { renameGroup, saveGroupOrder, savePartyOrder } from "./actions";
  */
 export function GroupsBoard({
   orderedGroups,
+  groupPlanRev,
   ungroupedTotal,
   groupFilter,
   onGroupFilter,
@@ -25,6 +26,7 @@ export function GroupsBoard({
   expandedId,
 }: {
   orderedGroups: [string, number][];
+  groupPlanRev: number;
   ungroupedTotal: number;
   groupFilter: string;
   onGroupFilter: (g: string) => void;
@@ -99,6 +101,12 @@ export function GroupsBoard({
 
   const order = localOrder ?? propsOrder;
   const totals = new Map(orderedGroups);
+
+  // Group numbers ARE the box order — they follow the boxes live as they are
+  // dragged around, and "Ungrouped" is always the last number. Printouts show
+  // the same numbering, stamped with the plan's revision.
+  const groupNumber = (g: string) =>
+    g === "Ungrouped" ? order.length + 1 : order.indexOf(g) + 1;
 
   const byGroup = new Map<string, PartyView[]>();
   for (const p of parties) {
@@ -306,7 +314,9 @@ export function GroupsBoard({
             </span>
           ) : (
             <>
-              <h3 className="min-w-0 truncate text-sm font-medium">{g}</h3>
+              <h3 className="min-w-0 truncate text-sm font-medium">
+                <span className="tabular-nums text-stone-400">{groupNumber(g)} ·</span> {g}
+              </h3>
               {g !== "Ungrouped" && (
                 <button
                   title={`Rename ${g}`}
@@ -355,10 +365,13 @@ export function GroupsBoard({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {chip("All groups", "all")}
-        {order.map((g) => chip(g, g, totals.get(g) ?? 0))}
-        {chip("Ungrouped", "Ungrouped", ungroupedTotal)}
+        {order.map((g) => chip(`${groupNumber(g)} · ${g}`, g, totals.get(g) ?? 0))}
+        {chip(`${groupNumber("Ungrouped")} · Ungrouped`, "Ungrouped", ungroupedTotal)}
+        <span className="ml-auto text-xs text-stone-400">
+          Grouping plan rev {groupPlanRev}
+        </span>
       </div>
 
       <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">

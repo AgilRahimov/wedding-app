@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { groupingRevision, orderGroupNames } from "@/lib/grouping";
 import { PrintButton } from "./print-button";
 
 export const dynamic = "force-dynamic";
@@ -23,18 +24,6 @@ type Member = {
 };
 type Party = { id: string; name: string; group: string; members: Member[] };
 
-function orderGroups(names: string[], savedJson: string): string[] {
-  let saved: string[] = [];
-  try {
-    const parsed = JSON.parse(savedJson);
-    if (Array.isArray(parsed)) saved = parsed.filter((g) => typeof g === "string");
-  } catch {}
-  const known = new Set(names);
-  const first = saved.filter((g) => known.has(g));
-  const rest = names.filter((g) => !first.includes(g)).sort((a, b) => a.localeCompare(b));
-  return [...first, ...rest];
-}
-
 // Page breaks are written in both spellings — the modern break-* properties
 // and the page-break-* ones — because Safari's print engine only reliably
 // honours the old ones. Same reason there is no CSS multi-column anywhere on
@@ -53,10 +42,12 @@ function splitColumns<T>(items: T[], count: number): T[][] {
   return columns;
 }
 
-// The companions worth printing by name: renamed +1s, children, spouses —
-// not the imported "+1 of …" placeholders, which the seat count already covers.
-function namedCompanions(p: Party) {
-  return p.members.filter((m) => m.name !== p.name && !m.name.startsWith("+1 "));
+// Everyone in the invitation worth printing by name — including the person
+// the invitation is named after, deliberately repeated so the grey line under
+// each invitation always lists the actual people. Only the imported "+1 of …"
+// placeholders are skipped; the seat count already covers them.
+function printedMembers(p: Party) {
+  return p.members.filter((m) => !m.name.startsWith("+1 "));
 }
 
 // Printed heights, estimated in millimetres on A4. In a half-sheet column
@@ -65,7 +56,7 @@ function namedCompanions(p: Party) {
 // leans tall — packing a sheet loosely costs a page, overflowing ruins one.
 function partyMm(p: Party, nameChars: number, companionChars: number) {
   const nameLines = Math.max(1, Math.ceil(p.name.length / nameChars));
-  const companionText = namedCompanions(p)
+  const companionText = printedMembers(p)
     .map((m) => m.name)
     .join(" · ");
   const companionLines = companionText ? Math.ceil(companionText.length / companionChars) : 0;
@@ -80,8 +71,9 @@ function groupMm(list: Party[], nameChars = 22, companionChars = 30) {
   return BOX_CHROME_MM + list.reduce((n, p) => n + partyMm(p, nameChars, companionChars), 0);
 }
 
-// What one column of an A4 sheet can safely hold (~273mm printable).
-const COLUMN_MM = 235;
+// What one column of an A4 sheet can safely hold (~273mm printable, minus
+// room for the revision line at the foot of every sheet).
+const COLUMN_MM = 228;
 
 type Sheet =
   | { kind: "columns"; left: string[]; right: string[] }
@@ -171,11 +163,21 @@ export default async function PrintPage() {
     list.push(p);
     byGroup.set(p.group, list);
   }
-  const groupNames = orderGroups(
+  const groupNames = orderGroupNames(
     [...byGroup.keys()].filter((g) => g !== "Ungrouped"),
     info.groupOrder
   );
   if (byGroup.has("Ungrouped")) groupNames.push("Ungrouped");
+
+  // Group numbers follow the box order — 1, 2, 3…, Ungrouped last — and the
+  // plan's revision goes up whenever numbering or membership changes.
+  const groupNo = new Map(groupNames.map((g, i) => [g, i + 1]));
+  const rev = await groupingRevision(
+    groupNames.map((g) => ({
+      name: g,
+      householdIds: (byGroup.get(g) ?? []).map((p) => p.id),
+    }))
+  );
 
   // How many groups there are of each size — the family matches groups to
   // tables of 12 and 18, so "five groups of 12" is the number they think in.
@@ -194,14 +196,23 @@ export default async function PrintPage() {
     year: "numeric",
   });
 
+  // On paper the word is "invitation" — one invitation covers the people who
+  // come together. On the screens the same thing is called a party.
   const statCells: [string, string][] = [
-    ["Parties invited", String(stats.parties)],
+    ["Invitations", String(stats.parties)],
     ["People invited", String(stats.people)],
     ["Coming", String(stats.yes)],
     ["Awaiting reply", String(stats.pending)],
     ["Declined", String(stats.no)],
     ["Seated", `${stats.seated} of ${stats.seats} seats`],
   ];
+
+  // Stamped on every sheet, so mixed printouts give themselves away.
+  const revisionLine = (
+    <p style={{ fontSize: "8pt" }} className="mt-4 text-right text-stone-400">
+      Grouping plan rev {rev} · printed {printedOn}
+    </p>
+  );
 
   return (
     <div className="mx-auto max-w-4xl text-stone-900">
@@ -264,11 +275,16 @@ export default async function PrintPage() {
             </div>
           ))}
         </div>
+        {revisionLine}
       </section>
 
-      {/* Sheet 2 — every group with its party and people counts */}
+      {/* Sheet 2 — every numbered group with its invitation and people counts */}
       <section style={PAGE_AFTER}>
         <h2 style={{ fontSize: "15pt", fontWeight: 600 }}>Groups</h2>
+        <p style={{ fontSize: "10.5pt" }} className="mt-1 text-stone-600">
+          Numbers follow the box order on the Guests screen. Each line shows
+          invitations · <strong className="text-stone-900">people</strong>.
+        </p>
         <div className="mt-3" style={{ display: "flex", gap: "10mm", alignItems: "flex-start" }}>
           {splitColumns(groupNames, 2).map((column, ci) => (
             <div key={ci} style={{ flex: "1 1 0", minWidth: 0 }}>
@@ -281,7 +297,10 @@ export default async function PrintPage() {
                     style={{ fontSize: "12pt" }}
                     className="flex justify-between gap-3 border-b border-stone-200 py-1"
                   >
-                    <span>{g}</span>
+                    <span>
+                      <span className="tabular-nums text-stone-500">{groupNo.get(g)}.</span>{" "}
+                      {g}
+                    </span>
                     <span className="whitespace-nowrap text-stone-500">
                       {list.length} · <strong className="text-stone-900">{people}</strong>
                     </span>
@@ -291,6 +310,7 @@ export default async function PrintPage() {
             </div>
           ))}
         </div>
+        {revisionLine}
       </section>
 
       {/* The group sheets. Each <section> is exactly one piece of A4; whole
@@ -307,16 +327,19 @@ export default async function PrintPage() {
               className="mb-6 overflow-hidden rounded-xl border border-stone-400"
             >
               <div className="flex items-baseline justify-between gap-2 border-b border-stone-400 bg-stone-100 px-3 py-1.5">
-                <h3 style={{ fontSize: "14pt", fontWeight: 600 }}>{g}</h3>
+                <h3 style={{ fontSize: "14pt", fontWeight: 600 }}>
+                  <span className="tabular-nums text-stone-500">{groupNo.get(g)}.</span> {g}
+                </h3>
                 <span style={{ fontSize: "10pt" }} className="whitespace-nowrap text-stone-600">
-                  {list.length} parties · {people} people
+                  {list.length} {list.length === 1 ? "invitation" : "invitations"} · {people}{" "}
+                  people
                 </span>
               </div>
               {list.map((p) => {
                 const allDeclined =
                   p.members.length > 0 && p.members.every((m) => m.rsvp === "no");
                 const coming = p.members.filter((m) => m.rsvp !== "no").length;
-                const companions = namedCompanions(p);
+                const members = printedMembers(p);
                 return (
                   <div key={p.id} className="border-b border-stone-200 px-3 py-1 last:border-b-0">
                     <p
@@ -328,9 +351,9 @@ export default async function PrintPage() {
                       <span style={{ fontWeight: 600 }}>{p.name}</span>
                       <span className="whitespace-nowrap">{allDeclined ? 0 : coming}</span>
                     </p>
-                    {companions.length > 0 && (
-                      <p style={{ fontSize: "10.5pt" }} className="text-stone-600">
-                        {companions
+                    {members.length > 0 && (
+                      <p style={{ fontSize: "10.5pt" }} className="text-stone-500">
+                        {members
                           .map(
                             (m) =>
                               `${m.isChild ? "🧒 " : ""}${m.name}${m.rsvp === "no" ? " ✗" : ""}`
@@ -354,10 +377,11 @@ export default async function PrintPage() {
           // Wider than a column, so it wraps less; if the estimate still says
           // it cannot fit one sheet, shrink the whole box just enough.
           const fullMm = groupMm(byGroup.get(sheet.group) ?? [], 48, 64);
-          const zoom = fullMm > 260 ? Math.max(0.7, Math.round((260 / fullMm) * 100) / 100) : 1;
+          const zoom = fullMm > 235 ? Math.max(0.7, Math.round((235 / fullMm) * 100) / 100) : 1;
           return (
             <section key={si} style={PAGE_BEFORE}>
               <div style={zoom < 1 ? { zoom } : undefined}>{groupBox(sheet.group)}</div>
+              {revisionLine}
             </section>
           );
         }
@@ -367,6 +391,7 @@ export default async function PrintPage() {
               <div style={{ flex: "1 1 0", minWidth: 0 }}>{sheet.left.map(groupBox)}</div>
               <div style={{ flex: "1 1 0", minWidth: 0 }}>{sheet.right.map(groupBox)}</div>
             </div>
+            {revisionLine}
           </section>
         );
       })}

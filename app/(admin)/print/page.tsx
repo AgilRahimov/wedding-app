@@ -207,10 +207,17 @@ export default async function PrintPage() {
     ["Seated", `${stats.seated} of ${stats.seats} seats`],
   ];
 
+  const printedShort = new Date().toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  });
+
   // Stamped on every sheet, so mixed printouts give themselves away.
   const revisionLine = (
-    <p style={{ fontSize: "8pt" }} className="mt-4 text-right text-stone-400">
-      Grouping plan rev {rev} · printed {printedOn}
+    <p style={{ fontSize: "11pt" }} className="mt-4 text-right text-stone-300">
+      Grouping plan rev <strong className="font-semibold text-stone-400">{rev}</strong>{" "}
+      · printed <strong className="font-semibold text-stone-400">{printedShort}</strong>
     </p>
   );
 

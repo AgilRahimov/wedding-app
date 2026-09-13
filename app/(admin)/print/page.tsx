@@ -35,6 +35,24 @@ function orderGroups(names: string[], savedJson: string): string[] {
   return [...first, ...rest];
 }
 
+// Page breaks are written in both spellings — the modern break-* properties
+// and the page-break-* ones — because Safari's print engine only reliably
+// honours the old ones. Same reason there is no CSS multi-column anywhere on
+// this page (Safari's print preview can hang on it): columns are split into
+// explicit <div>s instead.
+const PAGE_AFTER = { breakAfter: "page", pageBreakAfter: "always" } as const;
+const PAGE_BEFORE = { breakBefore: "page", pageBreakBefore: "always" } as const;
+const KEEP_TOGETHER = { breakInside: "avoid", pageBreakInside: "avoid" } as const;
+
+// Split a list into `count` columns, in reading order, as evenly as possible.
+function splitColumns<T>(items: T[], count: number): T[][] {
+  const per = Math.ceil(items.length / count) || 1;
+  const columns: T[][] = [];
+  for (let i = 0; i < items.length; i += per) columns.push(items.slice(i, i + per));
+  while (columns.length < count) columns.push([]);
+  return columns;
+}
+
 // The companions worth printing by name: renamed +1s, children, spouses —
 // not the imported "+1 of …" placeholders, which the seat count already covers.
 function namedCompanions(p: Party) {
@@ -197,7 +215,7 @@ export default async function PrintPage() {
       </div>
 
       {/* Sheet 1 — the dashboard */}
-      <section style={{ breakAfter: "page" }}>
+      <section style={PAGE_AFTER}>
         <h1 style={{ fontSize: "26pt", fontWeight: 600, letterSpacing: "-0.02em" }}>
           {info.coupleNames || "Our wedding"} — guest list
         </h1>
@@ -225,45 +243,53 @@ export default async function PrintPage() {
           How many groups there are of each size — for matching groups to tables of 12
           and 18.
         </p>
-        <div className="mt-3" style={{ columnCount: 3, columnGap: "10mm" }}>
-          {sizeRows.map(([size, count]) => (
-            <p
-              key={size}
-              style={{ fontSize: "12pt", breakInside: "avoid" }}
-              className="flex justify-between gap-3 border-b border-stone-200 py-1"
-            >
-              <span>
-                {size} {size === 1 ? "person" : "people"}
-              </span>
-              <span className="whitespace-nowrap text-stone-500">
-                <strong className="text-stone-900">{count}</strong>{" "}
-                {count === 1 ? "group" : "groups"}
-              </span>
-            </p>
+        <div className="mt-3" style={{ display: "flex", gap: "10mm", alignItems: "flex-start" }}>
+          {splitColumns(sizeRows, 3).map((column, ci) => (
+            <div key={ci} style={{ flex: "1 1 0", minWidth: 0 }}>
+              {column.map(([size, count]) => (
+                <p
+                  key={size}
+                  style={{ fontSize: "12pt" }}
+                  className="flex justify-between gap-3 border-b border-stone-200 py-1"
+                >
+                  <span>
+                    {size} {size === 1 ? "person" : "people"}
+                  </span>
+                  <span className="whitespace-nowrap text-stone-500">
+                    <strong className="text-stone-900">{count}</strong>{" "}
+                    {count === 1 ? "group" : "groups"}
+                  </span>
+                </p>
+              ))}
+            </div>
           ))}
         </div>
       </section>
 
       {/* Sheet 2 — every group with its party and people counts */}
-      <section style={{ breakAfter: "page" }}>
+      <section style={PAGE_AFTER}>
         <h2 style={{ fontSize: "15pt", fontWeight: 600 }}>Groups</h2>
-        <div className="mt-3" style={{ columnCount: 2, columnGap: "10mm" }}>
-          {groupNames.map((g) => {
-            const list = byGroup.get(g) ?? [];
-            const people = list.reduce((n, p) => n + p.members.length, 0);
-            return (
-              <p
-                key={g}
-                style={{ fontSize: "12pt", breakInside: "avoid" }}
-                className="flex justify-between gap-3 border-b border-stone-200 py-1"
-              >
-                <span>{g}</span>
-                <span className="whitespace-nowrap text-stone-500">
-                  {list.length} · <strong className="text-stone-900">{people}</strong>
-                </span>
-              </p>
-            );
-          })}
+        <div className="mt-3" style={{ display: "flex", gap: "10mm", alignItems: "flex-start" }}>
+          {splitColumns(groupNames, 2).map((column, ci) => (
+            <div key={ci} style={{ flex: "1 1 0", minWidth: 0 }}>
+              {column.map((g) => {
+                const list = byGroup.get(g) ?? [];
+                const people = list.reduce((n, p) => n + p.members.length, 0);
+                return (
+                  <p
+                    key={g}
+                    style={{ fontSize: "12pt" }}
+                    className="flex justify-between gap-3 border-b border-stone-200 py-1"
+                  >
+                    <span>{g}</span>
+                    <span className="whitespace-nowrap text-stone-500">
+                      {list.length} · <strong className="text-stone-900">{people}</strong>
+                    </span>
+                  </p>
+                );
+              })}
+            </div>
+          ))}
         </div>
       </section>
 
@@ -277,7 +303,7 @@ export default async function PrintPage() {
           return (
             <div
               key={g}
-              style={{ breakInside: "avoid" }}
+              style={KEEP_TOGETHER}
               className="mb-6 overflow-hidden rounded-xl border border-stone-400"
             >
               <div className="flex items-baseline justify-between gap-2 border-b border-stone-400 bg-stone-100 px-3 py-1.5">
@@ -330,13 +356,13 @@ export default async function PrintPage() {
           const fullMm = groupMm(byGroup.get(sheet.group) ?? [], 48, 64);
           const zoom = fullMm > 260 ? Math.max(0.7, Math.round((260 / fullMm) * 100) / 100) : 1;
           return (
-            <section key={si} style={{ breakBefore: "page" }}>
+            <section key={si} style={PAGE_BEFORE}>
               <div style={zoom < 1 ? { zoom } : undefined}>{groupBox(sheet.group)}</div>
             </section>
           );
         }
         return (
-          <section key={si} style={si > 0 ? { breakBefore: "page" } : undefined}>
+          <section key={si} style={si > 0 ? PAGE_BEFORE : undefined}>
             <div style={{ display: "flex", gap: "10mm", alignItems: "flex-start" }}>
               <div style={{ flex: "1 1 0", minWidth: 0 }}>{sheet.left.map(groupBox)}</div>
               <div style={{ flex: "1 1 0", minWidth: 0 }}>{sheet.right.map(groupBox)}</div>

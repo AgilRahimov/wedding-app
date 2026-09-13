@@ -14,7 +14,10 @@ export default async function AdminLayout({
   const session = await requireAdmin();
 
   return (
-    <div className="flex min-h-screen flex-col">
+    // print:block matters: Safari refuses to split content inside a flex
+    // container across printed pages — everything after page one comes out
+    // blank. Printing flattens the shell to normal block flow.
+    <div className="flex min-h-screen flex-col print:block print:min-h-0">
       <header className="sticky top-0 z-20 border-b border-stone-200 bg-white/90 backdrop-blur print:hidden">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-6">

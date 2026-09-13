@@ -3,10 +3,15 @@ import { PrintButton } from "./print-button";
 
 export const dynamic = "force-dynamic";
 
-// The paper report: sheet 1 is the dashboard, then the groups (a few per A4
-// sheet, in the family's box order), then the still-to-seat list on its own
-// sheet. Made to be read by Agil's father — large type, plain black on white,
-// declined guests struck through. Print with the button, or ⌘P.
+// The paper report: sheet 1 is the dashboard, then the groups, a few per A4
+// sheet in the family's box order. Made to be read by Agil's father — large
+// type, plain black on white, declined guests struck through. Print with the
+// button, or ⌘P.
+//
+// Pagination is decided HERE, not by the browser: browsers cut multi-column
+// content at page edges no matter what "keep together" asks, so this page
+// packs whole groups onto explicit sheets itself (see packSheets). A group is
+// never split across pages.
 
 type Member = {
   id: string;
@@ -36,44 +41,75 @@ function namedCompanions(p: Party) {
   return p.members.filter((m) => m.name !== p.name && !m.name.startsWith("+1 "));
 }
 
-// A box taller than one A4 sheet cannot honour "keep together", and the
-// browser then cuts it wherever it happens to run out of paper. So any group
-// too big for a sheet is split here, deliberately, into numbered boxes that
-// each fit.
-//
-// Heights are estimated in millimetres on paper (the column is ~89mm wide, so
-// long names and companion lists wrap). The estimate leans tall and the budget
-// leaves a wide margin: splitting a line early costs nothing, while a box that
-// overflows ruins the sheet.
-function partyMm(p: Party) {
-  const nameLines = Math.max(1, Math.ceil(p.name.length / 22));
+// Printed heights, estimated in millimetres on A4. In a half-sheet column
+// (~89mm wide) long names and companion lists wrap; a full-width box wraps
+// half as often. The estimate was calibrated against the real report and
+// leans tall — packing a sheet loosely costs a page, overflowing ruins one.
+function partyMm(p: Party, nameChars: number, companionChars: number) {
+  const nameLines = Math.max(1, Math.ceil(p.name.length / nameChars));
   const companionText = namedCompanions(p)
     .map((m) => m.name)
     .join(" · ");
-  const companionLines = companionText ? Math.ceil(companionText.length / 30) : 0;
+  const companionLines = companionText ? Math.ceil(companionText.length / companionChars) : 0;
   return nameLines * 9 + companionLines * 5;
 }
 
-// ~255mm of an A4 sheet is usable; 160mm of estimated rows keeps a box safely
-// inside one sheet even when the estimate runs short.
-const MAX_BOX_MM = 160;
+// Header, borders and the gap below a box.
+const BOX_CHROME_MM = 20;
 
-function chunkParties(list: Party[]): Party[][] {
-  const chunks: Party[][] = [];
-  let current: Party[] = [];
-  let mm = 0;
-  for (const p of list) {
-    const h = partyMm(p);
-    if (current.length > 0 && mm + h > MAX_BOX_MM) {
-      chunks.push(current);
-      current = [];
-      mm = 0;
+function groupMm(list: Party[], nameChars = 22, companionChars = 30) {
+  if (list.length === 0) return BOX_CHROME_MM + 10;
+  return BOX_CHROME_MM + list.reduce((n, p) => n + partyMm(p, nameChars, companionChars), 0);
+}
+
+// What one column of an A4 sheet can safely hold (~273mm printable).
+const COLUMN_MM = 235;
+
+type Sheet =
+  | { kind: "columns"; left: string[]; right: string[] }
+  // A group too tall for a column gets a full-width sheet of its own —
+  // still one page, never split.
+  | { kind: "full"; group: string };
+
+// Pack whole groups onto sheets, strictly in the given order: fill the left
+// column top-down, then the right, then start a new sheet.
+function packSheets(names: string[], heightOf: (g: string) => number): Sheet[] {
+  const sheets: Sheet[] = [];
+  let left: string[] = [];
+  let right: string[] = [];
+  let leftMm = 0;
+  let rightMm = 0;
+  let fillingLeft = true;
+  const flush = () => {
+    if (left.length > 0 || right.length > 0) sheets.push({ kind: "columns", left, right });
+    left = [];
+    right = [];
+    leftMm = 0;
+    rightMm = 0;
+    fillingLeft = true;
+  };
+  for (const g of names) {
+    const h = heightOf(g);
+    if (h > COLUMN_MM) {
+      flush();
+      sheets.push({ kind: "full", group: g });
+      continue;
     }
-    current.push(p);
-    mm += h;
+    if (fillingLeft && leftMm + h <= COLUMN_MM) {
+      left.push(g);
+      leftMm += h;
+    } else if (rightMm + h <= COLUMN_MM) {
+      fillingLeft = false;
+      right.push(g);
+      rightMm += h;
+    } else {
+      flush();
+      left.push(g);
+      leftMm = h;
+    }
   }
-  if (current.length > 0) chunks.push(current);
-  return chunks.length > 0 ? chunks : [[]];
+  flush();
+  return sheets;
 }
 
 export default async function PrintPage() {
@@ -132,22 +168,7 @@ export default async function PrintPage() {
   }
   const sizeRows = [...sizeCounts.entries()].sort((a, b) => b[0] - a[0]);
 
-  // Still to seat: parties with at least one not-declined member without a seat.
-  const toSeat = groupNames
-    .map((g) => ({
-      group: g,
-      parties: (byGroup.get(g) ?? [])
-        .map((p) => ({
-          name: p.name,
-          count: p.members.filter((m) => m.rsvp !== "no" && !m.tableId).length,
-        }))
-        .filter((p) => p.count > 0),
-    }))
-    .filter((g) => g.parties.length > 0);
-  const toSeatTotal = toSeat.reduce(
-    (n, g) => n + g.parties.reduce((m, p) => m + p.count, 0),
-    0
-  );
+  const sheets = packSheets(groupNames, (g) => groupMm(byGroup.get(g) ?? []));
 
   const printedOn = new Date().toLocaleDateString("en-GB", {
     day: "numeric",
@@ -245,35 +266,26 @@ export default async function PrintPage() {
         </div>
       </section>
 
-      {/* The groups, box by box. Big groups arrive as several numbered boxes
-          (see chunkParties), so every box genuinely fits on one sheet and the
-          "keep together" rule below always has something it can honour. */}
-      <section style={{ columnCount: 2, columnGap: "10mm" }}>
-        {groupNames.flatMap((g) => {
+      {/* The group sheets. Each <section> is exactly one piece of A4; whole
+          groups were packed into its two columns by packSheets, so the browser
+          never has to make a page-break decision inside a group. */}
+      {sheets.map((sheet, si) => {
+        const groupBox = (g: string) => {
           const list = byGroup.get(g) ?? [];
           const people = list.reduce((n, p) => n + p.members.length, 0);
-          const chunks = chunkParties(list);
-          return chunks.map((chunk, i) => (
+          return (
             <div
-              key={`${g}-${i}`}
+              key={g}
               style={{ breakInside: "avoid" }}
               className="mb-6 overflow-hidden rounded-xl border border-stone-400"
             >
               <div className="flex items-baseline justify-between gap-2 border-b border-stone-400 bg-stone-100 px-3 py-1.5">
-                <h3 style={{ fontSize: "14pt", fontWeight: 600 }}>
-                  {g}
-                  {chunks.length > 1 && (
-                    <span style={{ fontWeight: 400 }} className="text-stone-500">
-                      {" "}
-                      · {i + 1} of {chunks.length}
-                    </span>
-                  )}
-                </h3>
+                <h3 style={{ fontSize: "14pt", fontWeight: 600 }}>{g}</h3>
                 <span style={{ fontSize: "10pt" }} className="whitespace-nowrap text-stone-600">
-                  {i === 0 ? `${list.length} parties · ${people} people` : "continued"}
+                  {list.length} parties · {people} people
                 </span>
               </div>
-              {chunk.map((p) => {
+              {list.map((p) => {
                 const allDeclined =
                   p.members.length > 0 && p.members.every((m) => m.rsvp === "no");
                 const coming = p.members.filter((m) => m.rsvp !== "no").length;
@@ -302,62 +314,35 @@ export default async function PrintPage() {
                   </div>
                 );
               })}
-              {chunk.length === 0 && (
+              {list.length === 0 && (
                 <p style={{ fontSize: "11pt" }} className="px-3 py-2 text-stone-500">
                   Nobody here.
                 </p>
               )}
             </div>
-          ));
-        })}
-      </section>
+          );
+        };
 
-      {/* Still to seat, on its own sheet */}
-      <section style={{ breakBefore: "page" }}>
-        <h2 style={{ fontSize: "18pt", fontWeight: 600 }}>
-          Still to seat — {toSeatTotal} people
-        </h2>
-        <p style={{ fontSize: "11pt" }} className="mt-1 text-stone-600">
-          Everyone below is expected (or still to reply) and has no table yet. People who
-          declined are not counted.
-        </p>
-        {toSeatTotal === 0 ? (
-          <p style={{ fontSize: "13pt" }} className="mt-6">
-            Everyone has a seat. 🎉
-          </p>
-        ) : (
-          <div className="mt-4" style={{ columnCount: 2, columnGap: "10mm" }}>
-            {toSeat.flatMap((g) => {
-              // Same page-fitting rule as the group boxes: slice a long list so
-              // each piece can be kept whole on one sheet.
-              const slices: (typeof g.parties)[] = [];
-              for (let i = 0; i < g.parties.length; i += 24)
-                slices.push(g.parties.slice(i, i + 24));
-              return slices.map((slice, i) => (
-                <div key={`${g.group}-${i}`} style={{ breakInside: "avoid" }} className="mb-4">
-                  <h3
-                    style={{ fontSize: "12pt", fontWeight: 600 }}
-                    className="border-b border-stone-400 pb-0.5"
-                  >
-                    {g.group}
-                    {slices.length > 1 ? ` · ${i + 1} of ${slices.length}` : ""}
-                  </h3>
-                  {slice.map((p) => (
-                    <p
-                      key={p.name}
-                      style={{ fontSize: "12pt" }}
-                      className="flex justify-between gap-2 border-b border-stone-200 py-0.5"
-                    >
-                      <span>{p.name}</span>
-                      <span>{p.count}</span>
-                    </p>
-                  ))}
-                </div>
-              ));
-            })}
-          </div>
-        )}
-      </section>
+        if (sheet.kind === "full") {
+          // Wider than a column, so it wraps less; if the estimate still says
+          // it cannot fit one sheet, shrink the whole box just enough.
+          const fullMm = groupMm(byGroup.get(sheet.group) ?? [], 48, 64);
+          const zoom = fullMm > 260 ? Math.max(0.7, Math.round((260 / fullMm) * 100) / 100) : 1;
+          return (
+            <section key={si} style={{ breakBefore: "page" }}>
+              <div style={zoom < 1 ? { zoom } : undefined}>{groupBox(sheet.group)}</div>
+            </section>
+          );
+        }
+        return (
+          <section key={si} style={si > 0 ? { breakBefore: "page" } : undefined}>
+            <div style={{ display: "flex", gap: "10mm", alignItems: "flex-start" }}>
+              <div style={{ flex: "1 1 0", minWidth: 0 }}>{sheet.left.map(groupBox)}</div>
+              <div style={{ flex: "1 1 0", minWidth: 0 }}>{sheet.right.map(groupBox)}</div>
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }

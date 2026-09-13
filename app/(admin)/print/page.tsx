@@ -42,12 +42,29 @@ function splitColumns<T>(items: T[], count: number): T[][] {
   return columns;
 }
 
-// Everyone in the invitation worth printing by name — including the person
-// the invitation is named after, deliberately repeated so the grey line under
-// each invitation always lists the actual people. Only the imported "+1 of …"
-// placeholders are skipped; the seat count already covers them.
-function printedMembers(p: Party) {
-  return p.members.filter((m) => !m.name.startsWith("+1 "));
+// The grey line of names under an invitation — printed only when it says
+// something the bold name above it doesn't. Confirmed with Agil by example:
+//   Agil     [Agil, +1]              → no line
+//   Agil     [Agil Rahimov, +1]      → "Agil Rahimov + __"
+//   Agil     [Agil, Samra]           → "Agil + Samra"
+// So: the line appears once any member has a real name that differs from the
+// invitation's; every member is then listed, unnamed +1s as a "__" blank.
+function memberLine(p: Party): string | null {
+  const isBlank = (name: string) => {
+    const t = name.trim();
+    return t === "" || t === "+1" || t === "1" || t.startsWith("+1 ");
+  };
+  const informative = p.members.some(
+    (m) => !isBlank(m.name) && m.name.trim() !== p.name.trim()
+  );
+  if (!informative) return null;
+  return p.members
+    .map((m) =>
+      isBlank(m.name)
+        ? "__"
+        : `${m.isChild ? "🧒 " : ""}${m.name}${m.rsvp === "no" ? " ✗" : ""}`
+    )
+    .join(" + ");
 }
 
 // Printed heights, estimated in millimetres on A4. In a half-sheet column
@@ -56,10 +73,8 @@ function printedMembers(p: Party) {
 // leans tall — packing a sheet loosely costs a page, overflowing ruins one.
 function partyMm(p: Party, nameChars: number, companionChars: number) {
   const nameLines = Math.max(1, Math.ceil(p.name.length / nameChars));
-  const companionText = printedMembers(p)
-    .map((m) => m.name)
-    .join(" · ");
-  const companionLines = companionText ? Math.ceil(companionText.length / companionChars) : 0;
+  const line = memberLine(p);
+  const companionLines = line ? Math.ceil(line.length / companionChars) : 0;
   return nameLines * 9 + companionLines * 5;
 }
 
@@ -346,7 +361,7 @@ export default async function PrintPage() {
                 const allDeclined =
                   p.members.length > 0 && p.members.every((m) => m.rsvp === "no");
                 const coming = p.members.filter((m) => m.rsvp !== "no").length;
-                const members = printedMembers(p);
+                const line = memberLine(p);
                 return (
                   <div key={p.id} className="border-b border-stone-200 px-3 py-1 last:border-b-0">
                     <p
@@ -358,14 +373,9 @@ export default async function PrintPage() {
                       <span style={{ fontWeight: 600 }}>{p.name}</span>
                       <span className="whitespace-nowrap">{allDeclined ? 0 : coming}</span>
                     </p>
-                    {members.length > 0 && (
+                    {line && (
                       <p style={{ fontSize: "10.5pt" }} className="text-stone-500">
-                        {members
-                          .map(
-                            (m) =>
-                              `${m.isChild ? "🧒 " : ""}${m.name}${m.rsvp === "no" ? " ✗" : ""}`
-                          )
-                          .join(" · ")}
+                        {line}
                       </p>
                     )}
                   </div>

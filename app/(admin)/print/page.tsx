@@ -219,28 +219,6 @@ export default async function PrintPage() {
         </div>
 
         <h2 style={{ fontSize: "15pt", fontWeight: 600 }} className="mt-10">
-          Groups
-        </h2>
-        <div className="mt-3" style={{ columnCount: 2, columnGap: "10mm" }}>
-          {groupNames.map((g) => {
-            const list = byGroup.get(g) ?? [];
-            const people = list.reduce((n, p) => n + p.members.length, 0);
-            return (
-              <p
-                key={g}
-                style={{ fontSize: "12pt", breakInside: "avoid" }}
-                className="flex justify-between gap-3 border-b border-stone-200 py-1"
-              >
-                <span>{g}</span>
-                <span className="whitespace-nowrap text-stone-500">
-                  {list.length} · <strong className="text-stone-900">{people}</strong>
-                </span>
-              </p>
-            );
-          })}
-        </div>
-
-        <h2 style={{ fontSize: "15pt", fontWeight: 600 }} className="mt-10">
           Group sizes
         </h2>
         <p style={{ fontSize: "10.5pt" }} className="mt-1 text-stone-600">
@@ -263,6 +241,29 @@ export default async function PrintPage() {
               </span>
             </p>
           ))}
+        </div>
+      </section>
+
+      {/* Sheet 2 — every group with its party and people counts */}
+      <section style={{ breakAfter: "page" }}>
+        <h2 style={{ fontSize: "15pt", fontWeight: 600 }}>Groups</h2>
+        <div className="mt-3" style={{ columnCount: 2, columnGap: "10mm" }}>
+          {groupNames.map((g) => {
+            const list = byGroup.get(g) ?? [];
+            const people = list.reduce((n, p) => n + p.members.length, 0);
+            return (
+              <p
+                key={g}
+                style={{ fontSize: "12pt", breakInside: "avoid" }}
+                className="flex justify-between gap-3 border-b border-stone-200 py-1"
+              >
+                <span>{g}</span>
+                <span className="whitespace-nowrap text-stone-500">
+                  {list.length} · <strong className="text-stone-900">{people}</strong>
+                </span>
+              </p>
+            );
+          })}
         </div>
       </section>
 

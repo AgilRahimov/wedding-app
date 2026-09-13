@@ -36,6 +36,46 @@ function namedCompanions(p: Party) {
   return p.members.filter((m) => m.name !== p.name && !m.name.startsWith("+1 "));
 }
 
+// A box taller than one A4 sheet cannot honour "keep together", and the
+// browser then cuts it wherever it happens to run out of paper. So any group
+// too big for a sheet is split here, deliberately, into numbered boxes that
+// each fit.
+//
+// Heights are estimated in millimetres on paper (the column is ~89mm wide, so
+// long names and companion lists wrap). The estimate leans tall and the budget
+// leaves a wide margin: splitting a line early costs nothing, while a box that
+// overflows ruins the sheet.
+function partyMm(p: Party) {
+  const nameLines = Math.max(1, Math.ceil(p.name.length / 22));
+  const companionText = namedCompanions(p)
+    .map((m) => m.name)
+    .join(" · ");
+  const companionLines = companionText ? Math.ceil(companionText.length / 30) : 0;
+  return nameLines * 9 + companionLines * 5;
+}
+
+// ~255mm of an A4 sheet is usable; 160mm of estimated rows keeps a box safely
+// inside one sheet even when the estimate runs short.
+const MAX_BOX_MM = 160;
+
+function chunkParties(list: Party[]): Party[][] {
+  const chunks: Party[][] = [];
+  let current: Party[] = [];
+  let mm = 0;
+  for (const p of list) {
+    const h = partyMm(p);
+    if (current.length > 0 && mm + h > MAX_BOX_MM) {
+      chunks.push(current);
+      current = [];
+      mm = 0;
+    }
+    current.push(p);
+    mm += h;
+  }
+  if (current.length > 0) chunks.push(current);
+  return chunks.length > 0 ? chunks : [[]];
+}
+
 export default async function PrintPage() {
   const [households, info, tables] = await Promise.all([
     db.household.findMany({
@@ -82,6 +122,15 @@ export default async function PrintPage() {
     info.groupOrder
   );
   if (byGroup.has("Ungrouped")) groupNames.push("Ungrouped");
+
+  // How many groups there are of each size — the family matches groups to
+  // tables of 12 and 18, so "five groups of 12" is the number they think in.
+  const sizeCounts = new Map<number, number>();
+  for (const g of groupNames) {
+    const people = (byGroup.get(g) ?? []).reduce((n, p) => n + p.members.length, 0);
+    sizeCounts.set(people, (sizeCounts.get(people) ?? 0) + 1);
+  }
+  const sizeRows = [...sizeCounts.entries()].sort((a, b) => b[0] - a[0]);
 
   // Still to seat: parties with at least one not-declined member without a seat.
   const toSeat = groupNames
@@ -169,26 +218,62 @@ export default async function PrintPage() {
             );
           })}
         </div>
+
+        <h2 style={{ fontSize: "15pt", fontWeight: 600 }} className="mt-10">
+          Group sizes
+        </h2>
+        <p style={{ fontSize: "10.5pt" }} className="mt-1 text-stone-600">
+          How many groups there are of each size — for matching groups to tables of 12
+          and 18.
+        </p>
+        <div className="mt-3" style={{ columnCount: 3, columnGap: "10mm" }}>
+          {sizeRows.map(([size, count]) => (
+            <p
+              key={size}
+              style={{ fontSize: "12pt", breakInside: "avoid" }}
+              className="flex justify-between gap-3 border-b border-stone-200 py-1"
+            >
+              <span>
+                {size} {size === 1 ? "person" : "people"}
+              </span>
+              <span className="whitespace-nowrap text-stone-500">
+                <strong className="text-stone-900">{count}</strong>{" "}
+                {count === 1 ? "group" : "groups"}
+              </span>
+            </p>
+          ))}
+        </div>
       </section>
 
-      {/* The groups, box by box */}
+      {/* The groups, box by box. Big groups arrive as several numbered boxes
+          (see chunkParties), so every box genuinely fits on one sheet and the
+          "keep together" rule below always has something it can honour. */}
       <section style={{ columnCount: 2, columnGap: "10mm" }}>
-        {groupNames.map((g) => {
+        {groupNames.flatMap((g) => {
           const list = byGroup.get(g) ?? [];
           const people = list.reduce((n, p) => n + p.members.length, 0);
-          return (
+          const chunks = chunkParties(list);
+          return chunks.map((chunk, i) => (
             <div
-              key={g}
+              key={`${g}-${i}`}
               style={{ breakInside: "avoid" }}
               className="mb-6 overflow-hidden rounded-xl border border-stone-400"
             >
               <div className="flex items-baseline justify-between gap-2 border-b border-stone-400 bg-stone-100 px-3 py-1.5">
-                <h3 style={{ fontSize: "14pt", fontWeight: 600 }}>{g}</h3>
+                <h3 style={{ fontSize: "14pt", fontWeight: 600 }}>
+                  {g}
+                  {chunks.length > 1 && (
+                    <span style={{ fontWeight: 400 }} className="text-stone-500">
+                      {" "}
+                      · {i + 1} of {chunks.length}
+                    </span>
+                  )}
+                </h3>
                 <span style={{ fontSize: "10pt" }} className="whitespace-nowrap text-stone-600">
-                  {list.length} parties · {people} people
+                  {i === 0 ? `${list.length} parties · ${people} people` : "continued"}
                 </span>
               </div>
-              {list.map((p) => {
+              {chunk.map((p) => {
                 const allDeclined =
                   p.members.length > 0 && p.members.every((m) => m.rsvp === "no");
                 const coming = p.members.filter((m) => m.rsvp !== "no").length;
@@ -217,13 +302,13 @@ export default async function PrintPage() {
                   </div>
                 );
               })}
-              {list.length === 0 && (
+              {chunk.length === 0 && (
                 <p style={{ fontSize: "11pt" }} className="px-3 py-2 text-stone-500">
                   Nobody here.
                 </p>
               )}
             </div>
-          );
+          ));
         })}
       </section>
 
@@ -242,26 +327,34 @@ export default async function PrintPage() {
           </p>
         ) : (
           <div className="mt-4" style={{ columnCount: 2, columnGap: "10mm" }}>
-            {toSeat.map((g) => (
-              <div key={g.group} style={{ breakInside: "avoid" }} className="mb-4">
-                <h3
-                  style={{ fontSize: "12pt", fontWeight: 600 }}
-                  className="border-b border-stone-400 pb-0.5"
-                >
-                  {g.group}
-                </h3>
-                {g.parties.map((p) => (
-                  <p
-                    key={p.name}
-                    style={{ fontSize: "12pt" }}
-                    className="flex justify-between gap-2 border-b border-stone-200 py-0.5"
+            {toSeat.flatMap((g) => {
+              // Same page-fitting rule as the group boxes: slice a long list so
+              // each piece can be kept whole on one sheet.
+              const slices: (typeof g.parties)[] = [];
+              for (let i = 0; i < g.parties.length; i += 24)
+                slices.push(g.parties.slice(i, i + 24));
+              return slices.map((slice, i) => (
+                <div key={`${g.group}-${i}`} style={{ breakInside: "avoid" }} className="mb-4">
+                  <h3
+                    style={{ fontSize: "12pt", fontWeight: 600 }}
+                    className="border-b border-stone-400 pb-0.5"
                   >
-                    <span>{p.name}</span>
-                    <span>{p.count}</span>
-                  </p>
-                ))}
-              </div>
-            ))}
+                    {g.group}
+                    {slices.length > 1 ? ` · ${i + 1} of ${slices.length}` : ""}
+                  </h3>
+                  {slice.map((p) => (
+                    <p
+                      key={p.name}
+                      style={{ fontSize: "12pt" }}
+                      className="flex justify-between gap-2 border-b border-stone-200 py-0.5"
+                    >
+                      <span>{p.name}</span>
+                      <span>{p.count}</span>
+                    </p>
+                  ))}
+                </div>
+              ));
+            })}
           </div>
         )}
       </section>

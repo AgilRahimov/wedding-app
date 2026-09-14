@@ -176,32 +176,36 @@ export function VenueMap({
         style={{ height: "auto", touchAction: guest ? undefined : "none" }}
       >
         <g transform={`translate(${view.tx} ${view.ty}) scale(${view.s})`}>
-          {/* The room itself */}
-          <rect x={180} y={18} width={340} height={84} rx={6} fill={surf} stroke={wall} />
-          <text x={350} y={66} textAnchor="middle" fontSize={11} letterSpacing={3} fill={label}>
+          {/* The room itself. The hall is drawn wider than the venue's plan
+              strictly needs — the family is over the 504 stock seats, so the
+              side margins are deliberate free space for extra tables. The
+              couple's platform backs onto the entrance wall, with the two
+              entrances either side of it. */}
+          <rect x={230} y={18} width={340} height={84} rx={6} fill={surf} stroke={wall} />
+          <text x={400} y={66} textAnchor="middle" fontSize={11} letterSpacing={3} fill={label}>
             STAGE
           </text>
           <path
-            d="M130 100 H570 L670 200 V780 L570 880 H130 L30 780 V200 Z"
+            d="M180 100 H620 L770 250 V750 L620 880 H180 L30 750 V250 Z"
             fill="none"
             stroke={wall}
             strokeWidth={1.5}
           />
-          <rect x={310} y={102} width={80} height={598} fill={surf} />
-          <path d="M302 102 A48 48 0 0 0 398 102 Z" fill={surf} stroke={wall} />
-          <text x={350} y={420} textAnchor="middle" fontSize={9} letterSpacing={4} fill={label}
-            transform="rotate(90 350 420)">
+          <rect x={360} y={102} width={80} height={690} fill={surf} />
+          <path d="M352 102 A48 48 0 0 0 448 102 Z" fill={surf} stroke={wall} />
+          <text x={400} y={420} textAnchor="middle" fontSize={9} letterSpacing={4} fill={label}
+            transform="rotate(90 400 420)">
             RUNWAY
           </text>
-          <rect x={296} y={700} width={108} height={78} rx={8} fill={platFill} stroke={platStroke} />
-          <text x={350} y={743} textAnchor="middle" fontSize={10} fill={platText}>
+          <rect x={346} y={792} width={108} height={78} rx={8} fill={platFill} stroke={platStroke} />
+          <text x={400} y={835} textAnchor="middle" fontSize={10} fill={platText}>
             {platformLabel}
           </text>
-          <line x1={210} y1={928} x2={210} y2={902} stroke={arrows} strokeWidth={3} />
-          <path d="M204 906 L210 894 L216 906 Z" fill={arrows} />
-          <line x1={490} y1={928} x2={490} y2={902} stroke={arrows} strokeWidth={3} />
-          <path d="M484 906 L490 894 L496 906 Z" fill={arrows} />
-          <text x={350} y={922} textAnchor="middle" fontSize={10} letterSpacing={2} fill={label}>
+          <line x1={290} y1={928} x2={290} y2={902} stroke={arrows} strokeWidth={3} />
+          <path d="M284 906 L290 894 L296 906 Z" fill={arrows} />
+          <line x1={510} y1={928} x2={510} y2={902} stroke={arrows} strokeWidth={3} />
+          <path d="M504 906 L510 894 L516 906 Z" fill={arrows} />
+          <text x={400} y={922} textAnchor="middle" fontSize={10} letterSpacing={2} fill={label}>
             ENTRANCE
           </text>
 

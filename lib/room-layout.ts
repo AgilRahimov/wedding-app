@@ -40,12 +40,14 @@ const pct = (x: number, y: number) => ({
 
 // The runway runs down the middle of the canvas (x = 400); every column of
 // tables is placed by its distance from it and mirrored to the other side.
+// Column spacing is the plan's, opened up by a few percent so tables never
+// touch on screen.
 const MID = 400;
 const HALF = 73; // half-rounds: their flat side sits on the runway's edge
-const INNER = 162; // the column of rounds right beside the half-rounds
-const MIDDLE = 234; // the next column
-const OUTER = 303; // the rounds along the side walls
-const OVAL = 198; // the ovals, tucked between the inner and middle columns
+const INNER = 168; // the column of rounds right beside the half-rounds
+const MIDDLE = 244; // the next column
+const OUTER = 316; // the rounds along the side walls
+const OVAL = 206; // the ovals, tucked between the inner and middle columns
 
 const HALF_YS = [241, 373, 505, 636];
 const INNER_YS = [305, 382, 459, 536, 613];

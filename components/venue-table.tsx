@@ -30,31 +30,33 @@ function seatSpots(shape: string, capacity: number): [number, number][] {
     if (shape === "half") {
       // Chairs along the curve only — the flat side stays clear.
       const a = ((90 + ((i + 0.5) * 180) / capacity) * Math.PI) / 180;
-      spots.push([40 * Math.cos(a), 40 * Math.sin(a)]);
+      spots.push([36 * Math.cos(a), 36 * Math.sin(a)]);
     } else if (shape === "oval") {
       const t = (i / capacity) * Math.PI * 2;
-      spots.push([62 * Math.cos(t), 33 * Math.sin(t)]);
+      spots.push([56 * Math.cos(t), 30 * Math.sin(t)]);
     } else if (shape === "long") {
       const t = (i / capacity) * Math.PI * 2;
       spots.push([68 * Math.cos(t), 28 * Math.sin(t)]);
     } else {
       const a = (i / capacity) * Math.PI * 2 - Math.PI / 2;
-      spots.push([34 * Math.cos(a), 34 * Math.sin(a)]);
+      spots.push([30 * Math.cos(a), 30 * Math.sin(a)]);
     }
   }
   return spots;
 }
 
+// Table sizes are the venue plan's proportions, drawn a touch smaller than
+// strictly true so that neighbouring tables keep visible air between them.
 function Shape({ shape, ...attrs }: { shape: string } & React.SVGProps<SVGElement>) {
   if (shape === "half")
-    return <path d="M0 -30 A30 30 0 0 0 0 30 Z" {...(attrs as React.SVGProps<SVGPathElement>)} />;
+    return <path d="M0 -27 A27 27 0 0 0 0 27 Z" {...(attrs as React.SVGProps<SVGPathElement>)} />;
   if (shape === "oval")
-    return <ellipse rx={54} ry={25} {...(attrs as React.SVGProps<SVGEllipseElement>)} />;
+    return <ellipse rx={48} ry={22} {...(attrs as React.SVGProps<SVGEllipseElement>)} />;
   if (shape === "long")
     return (
       <rect x={-60} y={-17} width={120} height={34} rx={6} {...(attrs as React.SVGProps<SVGRectElement>)} />
     );
-  return <circle r={26} {...(attrs as React.SVGProps<SVGCircleElement>)} />;
+  return <circle r={23} {...(attrs as React.SVGProps<SVGCircleElement>)} />;
 }
 
 export function TableGlyph({
@@ -111,8 +113,8 @@ export function TableGlyph({
   // The label sits at the table's centre — for a half-round, the centre of the
   // half-disc, which is offset toward the curve.
   const rad = (t.rotation * Math.PI) / 180;
-  const lx = t.shape === "half" ? cx - 13 * Math.cos(rad) : cx;
-  const ly = t.shape === "half" ? cy - 13 * Math.sin(rad) : cy;
+  const lx = t.shape === "half" ? cx - 12 * Math.cos(rad) : cx;
+  const ly = t.shape === "half" ? cy - 12 * Math.sin(rad) : cy;
   const number = t.name.replace(/^Table\s+/, "");
 
   return (
@@ -124,10 +126,10 @@ export function TableGlyph({
       </title>
       {guest && isHighlight &&
         (t.shape === "oval" ? (
-          <ellipse cx={cx} cy={cy} rx={72} ry={43} transform={`rotate(${t.rotation} ${cx} ${cy})`}
+          <ellipse cx={cx} cy={cy} rx={66} ry={40} transform={`rotate(${t.rotation} ${cx} ${cy})`}
             fill="none" stroke="var(--gold)" strokeOpacity={0.3} strokeWidth={5} />
         ) : (
-          <circle cx={cx} cy={cy} r={t.shape === "long" ? 74 : 46}
+          <circle cx={cx} cy={cy} r={t.shape === "long" ? 74 : 42}
             fill="none" stroke="var(--gold)" strokeOpacity={0.3} strokeWidth={5} />
         ))}
       <g transform={`rotate(${t.rotation} ${cx} ${cy})`}>

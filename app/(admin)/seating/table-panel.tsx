@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { btnGhost, btnPrimary, inputCls, RsvpDot } from "@/components/ui";
+import { btnPrimary, inputCls, RsvpDot } from "@/components/ui";
 import { deleteTable, freeTable, rotateTable, seatGroup, setTableSeats } from "./actions";
 import type { TableSide } from "@/components/venue-table";
 import type { SeatingGroup } from "./seating-screen";
@@ -31,11 +31,54 @@ function standardSeats(shape: string) {
   return shape === "oval" ? 18 : 12;
 }
 
-/** What the popup shows for one table: the group that sits there with all
- *  its people, a seat-a-group picker while it is free, add/remove a chair,
- *  and "Remove group from table". Tables carry numbers, not names, so there
- *  is nothing to rename. Deleting the table itself is tucked away and only
- *  offered to the owner. */
+/** Seats − N + for the popup's header, right next to "Table N": squeeze in
+ *  an extra chair, or take one away. */
+export function SeatsStepper({
+  table,
+  run,
+}: {
+  table: { id: string; capacity: number; seated: number; shape: string };
+  run: (fn: () => Promise<unknown>) => void;
+}) {
+  const extra = table.capacity - standardSeats(table.shape);
+  const btn =
+    "h-8 w-8 rounded-lg border border-stone-300 bg-white text-lg leading-none text-stone-600 hover:bg-stone-50 disabled:opacity-40";
+  return (
+    <div className="flex items-center gap-1.5 text-sm">
+      <span className="text-stone-500">Seats</span>
+      <button
+        aria-label="Remove a seat"
+        className={btn}
+        disabled={table.capacity <= Math.max(1, table.seated)}
+        onClick={() => run(() => setTableSeats(table.id, table.capacity - 1))}
+      >
+        −
+      </button>
+      <span className="w-7 text-center text-base font-semibold tabular-nums">
+        {table.capacity}
+      </span>
+      <button
+        aria-label="Add a seat"
+        className={btn}
+        disabled={table.capacity >= 20}
+        onClick={() => run(() => setTableSeats(table.id, table.capacity + 1))}
+      >
+        +
+      </button>
+      {extra > 0 && (
+        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
+          {extra} extra
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** The body of the popup for one table: the group that sits there with all
+ *  its people, a seat-a-group picker while it is free, and "Remove group
+ *  from this table". Tables carry numbers, not names, so there is nothing
+ *  to rename. Deleting the table itself is tucked away and only offered to
+ *  the owner. */
 export function TablePanel({
   table,
   group,
@@ -61,11 +104,10 @@ export function TablePanel({
   const [pickedGroup, setPickedGroup] = useState("");
   useEffect(() => setPickedGroup(""), [table.id]);
 
-  const extra = table.capacity - standardSeats(table.shape);
   const over = table.seated > table.capacity;
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-4 p-5">
       {group ? (
         <div>
           <p className="flex items-center gap-2 text-base font-medium text-stone-900">
@@ -86,28 +128,6 @@ export function TablePanel({
       ) : (
         <p className="text-sm text-stone-500">This table is free — no group sits here yet.</p>
       )}
-
-      <div className="flex items-center gap-2 text-sm">
-        <span className="text-stone-600">Seats:</span>
-        <button
-          aria-label="Remove a seat"
-          className="h-9 w-9 rounded-lg border border-stone-200 text-lg text-stone-600 hover:bg-stone-50 disabled:opacity-40"
-          disabled={table.capacity <= Math.max(1, table.seated)}
-          onClick={() => run(() => setTableSeats(table.id, table.capacity - 1))}
-        >
-          −
-        </button>
-        <span className="w-7 text-center text-base tabular-nums">{table.capacity}</span>
-        <button
-          aria-label="Add a seat"
-          className="h-9 w-9 rounded-lg border border-stone-200 text-lg text-stone-600 hover:bg-stone-50 disabled:opacity-40"
-          disabled={table.capacity >= 20}
-          onClick={() => run(() => setTableSeats(table.id, table.capacity + 1))}
-        >
-          +
-        </button>
-        {extra > 0 && <span className="text-xs text-amber-600">{extra} squeezed in</span>}
-      </div>
 
       {!group && unplaced.length > 0 && (
         <div className="flex gap-2">
@@ -161,7 +181,7 @@ export function TablePanel({
       {group && (
         <div className="border-t border-stone-100 pt-3">
           <button
-            className={`${btnGhost} w-full`}
+            className="w-full rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700"
             onClick={() => run(() => freeTable(table.id))}
           >
             Remove group from this table

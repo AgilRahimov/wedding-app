@@ -7,7 +7,7 @@ import type { TableSide } from "@/components/venue-table";
 import { tableNo } from "@/lib/room-layout";
 import { moveTable, seatGroup } from "./actions";
 import { AddTablePanel } from "./add-table-panel";
-import { SideDot, TablePanel } from "./table-panel";
+import { SeatsStepper, SideDot, TablePanel } from "./table-panel";
 
 export type SeatingMember = {
   id: string;
@@ -280,7 +280,11 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+        {/* On a wide screen this card is exactly as tall as the plan beside it
+            and its list scrolls inside, so it fills the column however many
+            groups are placed. Stacked on a narrow screen it flows normally. */}
+        <div className="relative">
+        <div className="flex flex-col rounded-2xl border border-stone-200 bg-white p-4 shadow-sm lg:absolute lg:inset-0">
           <div className="flex items-baseline justify-between">
             <h2 className="font-medium">Groups to place</h2>
             <span className="text-sm text-stone-500">{unplaced.length} left</span>
@@ -297,9 +301,10 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
             className={`${inputCls} mt-3 w-full`}
           />
 
-          <div className="mt-3 flex max-h-[420px] flex-col gap-1.5 overflow-y-auto">
+          <div className="mt-3 max-h-[70vh] min-h-0 flex-1 overflow-y-auto lg:max-h-none">
+          <div className="flex flex-col gap-1.5">
             {unplaced.length === 0 && (
-              <p className="py-6 text-center text-sm text-stone-400">
+              <p className="py-3 text-center text-sm text-stone-400">
                 {search.trim()
                   ? "No group matches this search."
                   : "Every group has its table. 🎉"}
@@ -347,10 +352,10 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
 
           {placed.length > 0 && (
             <>
-              <h3 className="mt-4 border-t border-stone-100 pt-3 text-sm font-medium">
-                Placed
+              <h3 className="sticky top-0 mt-4 border-t border-stone-100 bg-white pb-1 pt-3 text-sm font-medium">
+                Placed <span className="font-normal text-stone-400">· {placed.length}</span>
               </h3>
-              <div className="mt-2 flex max-h-[320px] flex-col overflow-y-auto">
+              <div className="flex flex-col">
                 {placed.map((g) => {
                   const t = tableByGroup.get(g.name)!;
                   return (
@@ -381,11 +386,18 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
               </div>
             </>
           )}
+          </div>
+        </div>
         </div>
       </div>
 
       {openTable && (
-        <Modal title={openTable.name} size="md" onClose={() => setOpenTableId(null)}>
+        <Modal
+          title={openTable.name}
+          size="md"
+          onClose={() => setOpenTableId(null)}
+          headerExtra={<SeatsStepper table={openTable} run={run} />}
+        >
           <TablePanel
             table={openTable}
             group={openTable.groupName ? (groupByName.get(openTable.groupName) ?? null) : null}

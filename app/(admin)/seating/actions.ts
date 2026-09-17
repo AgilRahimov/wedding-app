@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
-import { requireAdminAction } from "@/lib/session";
+import { requireAdminAction, requireOwnerAction } from "@/lib/session";
 
 function refresh() {
   revalidatePath("/seating");
@@ -48,46 +48,47 @@ export async function freeTable(tableId: string) {
 
 const SHAPES = ["round", "half", "oval", "long"];
 
-export async function addTable(name: string, capacity: number, shape: string) {
+/** Add a table to the plan. Tables carry numbers, not names, so a new one
+ *  simply takes the next number — there is nothing to type or get wrong. */
+export async function addTable(capacity: number, shape: string) {
   const session = await requireAdminAction();
-  const trimmed = name.trim();
-  if (!trimmed) throw new Error("Give the table a name");
-  const count = await db.seatTable.count();
+  const existing = await db.seatTable.findMany({ select: { name: true } });
+  const highest = existing.reduce((max, t) => {
+    const n = Number(t.name.replace(/^Table\s+/i, ""));
+    return Number.isFinite(n) && n > max ? n : max;
+  }, 0);
+  const name = `Table ${highest + 1}`;
   await db.seatTable.create({
     data: {
-      name: trimmed,
+      name,
       capacity: Math.max(1, Math.min(40, Math.round(capacity) || 12)),
       shape: SHAPES.includes(shape) ? shape : "round",
-      sortOrder: count,
+      sortOrder: highest + 1,
       // Drops into the middle of the room; the family drags it where it belongs.
       x: 50,
       y: 50,
     },
   });
-  await logAction(session.name, `added ${trimmed} to the plan`);
+  await logAction(session.name, `added ${name} to the plan`);
   refresh();
 }
 
-export async function updateTable(
-  tableId: string,
-  values: { name: string; capacity: number }
-) {
+/** Squeeze in an extra chair, or take one away. */
+export async function setTableSeats(tableId: string, capacity: number) {
   const session = await requireAdminAction();
-  const name = values.name.trim();
-  if (!name) throw new Error("Give the table a name");
-  await db.seatTable.update({
+  const seats = Math.max(1, Math.min(40, Math.round(capacity) || 12));
+  const table = await db.seatTable.update({
     where: { id: tableId },
-    data: {
-      name,
-      capacity: Math.max(1, Math.min(40, Math.round(values.capacity) || 10)),
-    },
+    data: { capacity: seats },
   });
-  await logAction(session.name, `set ${name} to ${Math.max(1, Math.min(40, Math.round(values.capacity) || 10))} seats`);
+  await logAction(session.name, `set ${table.name} to ${seats} seats`);
   refresh();
 }
 
+/** Owner only: taking a table off the plan is not an everyday action, and
+ *  the server refuses it for everyone else whatever the screen shows. */
 export async function deleteTable(tableId: string) {
-  const session = await requireAdminAction();
+  const session = await requireOwnerAction();
   // The group that sat here simply becomes unplaced; nobody is deleted.
   const t = await db.seatTable.delete({ where: { id: tableId } });
   await logAction(session.name, `deleted ${t.name} from the plan`);

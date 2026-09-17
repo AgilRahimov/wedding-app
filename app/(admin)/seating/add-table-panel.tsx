@@ -4,6 +4,8 @@ import { useTransition } from "react";
 import { btnGhost, btnPrimary, inputCls } from "@/components/ui";
 import { addTable } from "./actions";
 
+/** A new table takes the next number by itself — only its size and shape
+ *  are asked for. */
 export function AddTablePanel({ onDone }: { onDone: () => void }) {
   const [isPending, startTransition] = useTransition();
 
@@ -11,8 +13,7 @@ export function AddTablePanel({ onDone }: { onDone: () => void }) {
     startTransition(async () => {
       try {
         await addTable(
-          String(formData.get("name") ?? ""),
-          Number(formData.get("capacity") ?? 10),
+          Number(formData.get("capacity") ?? 12),
           String(formData.get("shape") ?? "round")
         );
         onDone();
@@ -28,10 +29,6 @@ export function AddTablePanel({ onDone }: { onDone: () => void }) {
       className="flex flex-wrap items-end gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm"
     >
       <label className="flex flex-col gap-1 text-xs font-medium text-stone-600">
-        Table name
-        <input name="name" required defaultValue="Table" className={`${inputCls} w-40`} />
-      </label>
-      <label className="flex flex-col gap-1 text-xs font-medium text-stone-600">
         Seats
         <input name="capacity" type="number" min={1} max={40} defaultValue={12} className={`${inputCls} w-20`} />
       </label>
@@ -45,11 +42,15 @@ export function AddTablePanel({ onDone }: { onDone: () => void }) {
         </select>
       </label>
       <button className={btnPrimary} disabled={isPending}>
-        {isPending ? "Adding…" : "Add"}
+        {isPending ? "Adding…" : "Add table"}
       </button>
       <button type="button" className={btnGhost} onClick={onDone}>
         Close
       </button>
+      <p className="w-full text-xs text-stone-400">
+        It takes the next table number and lands in the middle of the room — use “Move
+        tables” to drag it into place.
+      </p>
     </form>
   );
 }

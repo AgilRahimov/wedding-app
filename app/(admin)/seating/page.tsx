@@ -1,10 +1,28 @@
+import type { TableSide } from "@/components/venue-table";
 import { db } from "@/lib/db";
 import { orderGroupNames } from "@/lib/grouping";
+import { requireAdmin } from "@/lib/session";
 import { SeatingScreen, type SeatingData, type SeatingGroup } from "./seating-screen";
 
 export const dynamic = "force-dynamic";
 
+// Whose guests a group is, read from its invitations' "side": all groom's →
+// "groom", all bride's → "bride", nothing filled in → null, and anything
+// else (both sides together, or some invitations left blank) → "mixed".
+function sideOfGroup(list: { side: string | null }[]): TableSide {
+  const kinds = new Set(
+    list.map((h) => {
+      const s = (h.side ?? "").toLowerCase();
+      return s.includes("bride") ? "bride" : s.includes("groom") ? "groom" : "none";
+    })
+  );
+  if (kinds.size !== 1) return "mixed";
+  const only = [...kinds][0];
+  return only === "none" ? null : (only as TableSide);
+}
+
 export default async function SeatingPage() {
+  const session = await requireAdmin();
   const [tables, households, info] = await Promise.all([
     db.seatTable.findMany({ orderBy: { sortOrder: "asc" } }),
     db.household.findMany({
@@ -32,6 +50,7 @@ export default async function SeatingPage() {
     const members = list.flatMap((h) => h.guests);
     return {
       name,
+      side: sideOfGroup(list),
       parties: list.map((h) => ({
         id: h.id,
         name: h.name,
@@ -65,6 +84,7 @@ export default async function SeatingPage() {
       0
     ),
     coupleNames: info.coupleNames || "The couple",
+    isOwner: session.role === "owner",
   };
 
   return <SeatingScreen data={data} />;

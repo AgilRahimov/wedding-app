@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { btnGhost, btnPrimary, inputCls, RsvpDot } from "@/components/ui";
+import { btnGhost, btnPrimary, inputCls, Modal, RsvpDot } from "@/components/ui";
 import { VenueMap } from "@/components/venue-map";
+import type { TableSide } from "@/components/venue-table";
 import { tableNo } from "@/lib/room-layout";
 import { moveTable, seatGroup } from "./actions";
 import { AddTablePanel } from "./add-table-panel";
-import { TablePanel } from "./table-panel";
+import { SideDot, TablePanel } from "./table-panel";
 
 export type SeatingMember = {
   id: string;
@@ -22,9 +23,10 @@ export type SeatingParty = {
 };
 
 // One guest group = one table. `coming` is the seats the group really needs —
-// everyone who has not declined.
+// everyone who has not declined. `side` colours its table on the plan.
 export type SeatingGroup = {
   name: string;
+  side: TableSide;
   parties: SeatingParty[];
   people: number;
   coming: number;
@@ -47,6 +49,8 @@ export type SeatingData = {
   groups: SeatingGroup[];
   ungroupedPeople: number;
   coupleNames: string;
+  // Only the owner may take a table off the plan.
+  isOwner: boolean;
 };
 
 export function SeatingScreen({ data }: { data: SeatingData }) {
@@ -102,6 +106,7 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
       // Seats taken = the group's people who have not declined. A decline
       // frees its seat by itself — there is nothing to reconcile any more.
       seated: group?.coming ?? 0,
+      side: group?.side ?? null,
     };
   });
 
@@ -132,7 +137,7 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
       if (table.groupName && table.groupName !== selected.name) {
         if (
           !confirm(
-            `${table.name} already seats “${table.groupName}” — replace them? That group becomes unplaced.`
+            `${table.name} already seats “${table.groupName}” — replace them? That group goes back to “Groups to place”.`
           )
         )
           return;
@@ -140,19 +145,19 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
       if (selected.coming > table.capacity) {
         if (
           !confirm(
-            `${table.name} has ${table.capacity} seats for ${selected.coming} people — seat them anyway? You can squeeze in extra chairs from the table's panel.`
+            `${table.name} has ${table.capacity} seats for ${selected.coming} people — seat them anyway? You can squeeze in extra chairs from the table's popup.`
           )
         )
           return;
       }
       const name = selected.name;
+      // Stay on the plan after seating: the next group is one click away.
       setSelectedGroup(null);
-      setOpenTableId(tableId);
       run(() => seatGroup(name, tableId));
       return;
     }
 
-    setOpenTableId((cur) => (cur === tableId ? null : tableId));
+    setOpenTableId(tableId);
   }
 
   function handleTableMove(tableId: string, x: number, y: number) {
@@ -192,7 +197,7 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
       {shortOfSeats > 0 && (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
           You have {totalSeats} seats for {comingTotal} people expected — {shortOfSeats}{" "}
-          short. Add tables, or squeeze in extra chairs from a table&apos;s panel.
+          short. Add tables, or squeeze in extra chairs from a table&apos;s popup.
         </p>
       )}
 
@@ -246,126 +251,151 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
             editLayout={editLayout}
             platformLabel={data.coupleNames}
           />
-          <p className="mt-3 text-xs text-stone-400">
-            The real Buta Palace floor plan. Pinch or use the buttons to zoom; drag the
-            background to pan. Click a table to see its group; amber chairs are seats
-            squeezed in beyond the standard 12 (18 at the ovals).
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-500">
+            <span className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-full border border-sky-300 bg-sky-100" />
+              Groom&apos;s side
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-full border border-pink-300 bg-pink-100" />
+              Bride&apos;s side
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-full border border-amber-400 bg-amber-100" />
+              Both sides, or side missing
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-full border border-rose-400 bg-rose-100" />
+              Over capacity
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-full border border-dashed border-stone-300 bg-stone-50" />
+              Free
+            </span>
+          </div>
+          <p className="mt-2 text-xs text-stone-400">
+            Click a table to see who sits there. Pinch or use the buttons to zoom; drag
+            the background to pan. Amber chairs are seats squeezed in beyond the standard
+            12 (18 at the ovals).
           </p>
         </div>
 
-        <div className="flex flex-col gap-4">
-          {openTable ? (
-            <TablePanel
-              table={openTable}
-              group={openTable.groupName ? (groupByName.get(openTable.groupName) ?? null) : null}
-              unplaced={data.groups.filter((g) => !tableByGroup.has(g.name))}
-              onClose={() => setOpenTableId(null)}
-              run={run}
-            />
-          ) : (
-            <div className="rounded-2xl border border-stone-200 bg-white p-4 text-sm text-stone-500 shadow-sm">
-              Click a table on the plan to see who is sitting there.
-            </div>
-          )}
+        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+          <div className="flex items-baseline justify-between">
+            <h2 className="font-medium">Groups to place</h2>
+            <span className="text-sm text-stone-500">{unplaced.length} left</span>
+          </div>
+          <p className="mt-1 text-xs text-stone-400">
+            Pick a group, then click its table on the plan. Each group takes one whole
+            table.
+          </p>
 
-          <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-            <div className="flex items-baseline justify-between">
-              <h2 className="font-medium">Groups to place</h2>
-              <span className="text-sm text-stone-500">{unplaced.length} left</span>
-            </div>
-            <p className="mt-1 text-xs text-stone-400">
-              Pick a group, then click its table on the plan. Each group takes one whole
-              table.
-            </p>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search a group or a name…"
+            className={`${inputCls} mt-3 w-full`}
+          />
 
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search a group or a name…"
-              className={`${inputCls} mt-3 w-full`}
-            />
-
-            <div className="mt-3 flex max-h-[380px] flex-col gap-1.5 overflow-y-auto">
-              {unplaced.length === 0 && (
-                <p className="py-6 text-center text-sm text-stone-400">
-                  {search.trim()
-                    ? "No group matches this search."
-                    : "Every group has its table. 🎉"}
-                </p>
-              )}
-              {unplaced.map((g) => {
-                const isSelected = selectedGroup === g.name;
-                return (
-                  <button
-                    key={g.name}
-                    onClick={() =>
-                      setSelectedGroup((cur) => (cur === g.name ? null : g.name))
-                    }
-                    className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
-                      isSelected
-                        ? "border-rose-500 bg-rose-50"
-                        : "border-stone-200 hover:bg-stone-50"
-                    }`}
-                  >
-                    <span className="flex items-baseline justify-between gap-2">
-                      <span className="min-w-0 truncate font-medium">{g.name}</span>
-                      <span className="shrink-0 text-xs text-stone-500">
-                        {g.coming} {g.coming === 1 ? "person" : "people"}
-                      </span>
+          <div className="mt-3 flex max-h-[420px] flex-col gap-1.5 overflow-y-auto">
+            {unplaced.length === 0 && (
+              <p className="py-6 text-center text-sm text-stone-400">
+                {search.trim()
+                  ? "No group matches this search."
+                  : "Every group has its table. 🎉"}
+              </p>
+            )}
+            {unplaced.map((g) => {
+              const isSelected = selectedGroup === g.name;
+              return (
+                <button
+                  key={g.name}
+                  onClick={() =>
+                    setSelectedGroup((cur) => (cur === g.name ? null : g.name))
+                  }
+                  className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
+                    isSelected
+                      ? "border-rose-500 bg-rose-50"
+                      : "border-stone-200 hover:bg-stone-50"
+                  }`}
+                >
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <SideDot side={g.side} />
+                      <span className="truncate font-medium">{g.name}</span>
                     </span>
-                    <span className="mt-1 flex items-center gap-1.5 text-xs text-stone-500">
-                      <span className="flex items-center gap-0.5">
-                        {g.parties
-                          .flatMap((p) => p.members)
-                          .slice(0, 20)
-                          .map((m) => (
-                            <RsvpDot key={m.id} rsvp={m.rsvp} />
-                          ))}
-                      </span>
-                      {g.parties.length} {g.parties.length === 1 ? "invitation" : "invitations"}
-                      {g.declined > 0 && ` · ${g.declined} declined`}
+                    <span className="shrink-0 text-xs text-stone-500">
+                      {g.coming} {g.coming === 1 ? "person" : "people"}
                     </span>
-                  </button>
-                );
-              })}
-            </div>
+                  </span>
+                  <span className="mt-1 flex items-center gap-1.5 text-xs text-stone-500">
+                    <span className="flex items-center gap-0.5">
+                      {g.parties
+                        .flatMap((p) => p.members)
+                        .slice(0, 20)
+                        .map((m) => (
+                          <RsvpDot key={m.id} rsvp={m.rsvp} />
+                        ))}
+                    </span>
+                    {g.parties.length} {g.parties.length === 1 ? "invitation" : "invitations"}
+                    {g.declined > 0 && ` · ${g.declined} declined`}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
 
-            {placed.length > 0 && (
-              <>
-                <h3 className="mt-4 border-t border-stone-100 pt-3 text-sm font-medium">
-                  Placed
-                </h3>
-                <div className="mt-2 flex max-h-[240px] flex-col overflow-y-auto">
-                  {placed.map((g) => {
-                    const t = tableByGroup.get(g.name)!;
-                    return (
-                      <button
-                        key={g.name}
-                        onClick={() => setOpenTableId(t.id)}
-                        className="flex items-baseline justify-between gap-2 rounded-md px-2 py-1 text-left text-sm hover:bg-stone-50"
-                      >
-                        <span className="min-w-0 truncate text-stone-600">
+          {placed.length > 0 && (
+            <>
+              <h3 className="mt-4 border-t border-stone-100 pt-3 text-sm font-medium">
+                Placed
+              </h3>
+              <div className="mt-2 flex max-h-[320px] flex-col overflow-y-auto">
+                {placed.map((g) => {
+                  const t = tableByGroup.get(g.name)!;
+                  return (
+                    <button
+                      key={g.name}
+                      onClick={() => setOpenTableId(t.id)}
+                      className="flex items-center justify-between gap-2 rounded-md px-2 py-1 text-left text-sm hover:bg-stone-50"
+                    >
+                      <span className="flex min-w-0 items-center gap-1.5 text-stone-600">
+                        <SideDot side={g.side} />
+                        <span className="truncate">
                           <span className="tabular-nums text-stone-400">
                             {tableNo(t.name)} ·
                           </span>{" "}
                           {g.name}
                         </span>
-                        <span
-                          className={`shrink-0 text-xs ${
-                            g.coming > t.capacity ? "font-medium text-rose-600" : "text-stone-400"
-                          }`}
-                        >
-                          {g.coming}/{t.capacity}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
+                      </span>
+                      <span
+                        className={`shrink-0 text-xs ${
+                          g.coming > t.capacity ? "font-medium text-rose-600" : "text-stone-400"
+                        }`}
+                      >
+                        {g.coming}/{t.capacity}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
       </div>
+
+      {openTable && (
+        <Modal title={openTable.name} size="md" onClose={() => setOpenTableId(null)}>
+          <TablePanel
+            table={openTable}
+            group={openTable.groupName ? (groupByName.get(openTable.groupName) ?? null) : null}
+            unplaced={data.groups.filter((g) => !tableByGroup.has(g.name))}
+            isOwner={data.isOwner}
+            onClose={() => setOpenTableId(null)}
+            run={run}
+          />
+        </Modal>
+      )}
     </div>
   );
 }

@@ -2,21 +2,45 @@
 
 import { useEffect, useState } from "react";
 import { btnGhost, btnPrimary, inputCls, RsvpDot } from "@/components/ui";
-import { deleteTable, freeTable, rotateTable, seatGroup, updateTable } from "./actions";
+import { deleteTable, freeTable, rotateTable, seatGroup, setTableSeats } from "./actions";
+import type { TableSide } from "@/components/venue-table";
 import type { SeatingGroup } from "./seating-screen";
+
+/** The little colour chip that says whose guests a group is. */
+export function SideDot({ side }: { side: TableSide }) {
+  if (!side) return null;
+  const tone =
+    side === "groom" ? "bg-sky-400" : side === "bride" ? "bg-pink-400" : "bg-amber-400";
+  const label =
+    side === "groom"
+      ? "Groom's side"
+      : side === "bride"
+        ? "Bride's side"
+        : "Both sides / side missing";
+  return (
+    <span
+      className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${tone}`}
+      title={label}
+      aria-label={label}
+    />
+  );
+}
 
 // The venue's standard sizes — anything above is a squeezed-in extra chair.
 function standardSeats(shape: string) {
   return shape === "oval" ? 18 : 12;
 }
 
-/** The right-hand panel for one table: the group that sits there with all its
- *  people, seat-a-group picker while it is free, add/remove a chair, rename,
- *  rotate, free, delete. */
+/** What the popup shows for one table: the group that sits there with all
+ *  its people, a seat-a-group picker while it is free, add/remove a chair,
+ *  and "Remove group from table". Tables carry numbers, not names, so there
+ *  is nothing to rename. Deleting the table itself is tucked away and only
+ *  offered to the owner. */
 export function TablePanel({
   table,
   group,
   unplaced,
+  isOwner,
   onClose,
   run,
 }: {
@@ -30,63 +54,55 @@ export function TablePanel({
   };
   group: SeatingGroup | null;
   unplaced: SeatingGroup[];
+  isOwner: boolean;
   onClose: () => void;
   run: (fn: () => Promise<unknown>) => void;
 }) {
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(table.name);
   const [pickedGroup, setPickedGroup] = useState("");
-
-  useEffect(() => {
-    setName(table.name);
-    setEditing(false);
-    setPickedGroup("");
-  }, [table.id, table.name]);
+  useEffect(() => setPickedGroup(""), [table.id]);
 
   const extra = table.capacity - standardSeats(table.shape);
+  const over = table.seated > table.capacity;
 
   return (
-    <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-      <div className="flex items-baseline justify-between gap-2">
-        <h2 className="font-medium">{table.name}</h2>
-        <button className="text-sm text-stone-400 hover:underline" onClick={onClose}>
-          close
-        </button>
-      </div>
+    <div className="flex flex-col gap-4 p-4">
       {group ? (
-        <>
-          <p className="mt-0.5 text-sm text-stone-700">{group.name}</p>
-          <p className="text-xs text-stone-400">
-            {group.parties.length}{" "}
-            {group.parties.length === 1 ? "invitation" : "invitations"} · {group.coming} of{" "}
-            {table.capacity} seats
-            {group.declined > 0 && ` · ${group.declined} declined`}
+        <div>
+          <p className="flex items-center gap-2 text-base font-medium text-stone-900">
+            <SideDot side={group.side} />
+            {group.name}
           </p>
-        </>
+          <p className={`mt-0.5 text-sm ${over ? "font-medium text-rose-600" : "text-stone-500"}`}>
+            {group.coming} of {table.capacity} seats taken
+            {over && " — over capacity"}
+            <span className="font-normal text-stone-400">
+              {" · "}
+              {group.parties.length}{" "}
+              {group.parties.length === 1 ? "invitation" : "invitations"}
+              {group.declined > 0 && ` · ${group.declined} declined`}
+            </span>
+          </p>
+        </div>
       ) : (
-        <p className="mt-0.5 text-sm text-stone-500">Free — no group sits here yet.</p>
+        <p className="text-sm text-stone-500">This table is free — no group sits here yet.</p>
       )}
 
-      <div className="mt-3 flex items-center gap-2 text-sm">
+      <div className="flex items-center gap-2 text-sm">
         <span className="text-stone-600">Seats:</span>
         <button
           aria-label="Remove a seat"
-          className="h-7 w-7 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 disabled:opacity-40"
+          className="h-9 w-9 rounded-lg border border-stone-200 text-lg text-stone-600 hover:bg-stone-50 disabled:opacity-40"
           disabled={table.capacity <= Math.max(1, table.seated)}
-          onClick={() =>
-            run(() => updateTable(table.id, { name: table.name, capacity: table.capacity - 1 }))
-          }
+          onClick={() => run(() => setTableSeats(table.id, table.capacity - 1))}
         >
           −
         </button>
-        <span className="w-6 text-center tabular-nums">{table.capacity}</span>
+        <span className="w-7 text-center text-base tabular-nums">{table.capacity}</span>
         <button
           aria-label="Add a seat"
-          className="h-7 w-7 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 disabled:opacity-40"
+          className="h-9 w-9 rounded-lg border border-stone-200 text-lg text-stone-600 hover:bg-stone-50 disabled:opacity-40"
           disabled={table.capacity >= 20}
-          onClick={() =>
-            run(() => updateTable(table.id, { name: table.name, capacity: table.capacity + 1 }))
-          }
+          onClick={() => run(() => setTableSeats(table.id, table.capacity + 1))}
         >
           +
         </button>
@@ -94,7 +110,7 @@ export function TablePanel({
       </div>
 
       {!group && unplaced.length > 0 && (
-        <div className="mt-3 flex gap-2">
+        <div className="flex gap-2">
           <select
             value={pickedGroup}
             onChange={(e) => setPickedGroup(e.target.value)}
@@ -119,7 +135,7 @@ export function TablePanel({
       )}
 
       {group && (
-        <ul className="mt-3 flex flex-col gap-1">
+        <ul className="flex max-h-[45vh] flex-col gap-1 overflow-y-auto">
           {group.parties.map((p) => (
             <li key={p.id} className="rounded-lg border border-stone-100 px-3 py-1.5 text-sm">
               <span className="font-medium">{p.name}</span>
@@ -142,66 +158,58 @@ export function TablePanel({
         </ul>
       )}
 
-      {editing ? (
-        <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-stone-100 pt-3">
-          <label className="flex flex-col gap-1 text-xs text-stone-600">
-            Name
-            <input className={`${inputCls} w-40`} value={name} onChange={(e) => setName(e.target.value)} />
-          </label>
+      {group && (
+        <div className="border-t border-stone-100 pt-3">
           <button
-            className={btnPrimary}
-            onClick={() =>
-              run(async () => {
-                await updateTable(table.id, { name, capacity: table.capacity });
-                setEditing(false);
-              })
-            }
+            className={`${btnGhost} w-full`}
+            onClick={() => run(() => freeTable(table.id))}
           >
-            Save
+            Remove group from this table
           </button>
-          <button className={btnGhost} onClick={() => setEditing(false)}>
-            Cancel
-          </button>
+          <p className="mt-1.5 text-center text-xs text-stone-400">
+            “{group.name}” goes back to “Groups to place” and the table becomes free.
+            Nobody is deleted.
+          </p>
         </div>
-      ) : (
-        <div className="mt-4 flex flex-wrap gap-3 border-t border-stone-100 pt-3 text-sm">
-          <button className="text-stone-600 hover:underline" onClick={() => setEditing(true)}>
-            Rename
-          </button>
-          {table.shape !== "round" && (
-            <button
-              className="text-stone-600 hover:underline"
-              onClick={() => run(() => rotateTable(table.id))}
-            >
-              Rotate 45°
-            </button>
-          )}
-          {group && (
-            <button
-              className="text-stone-600 hover:underline"
-              onClick={() => run(() => freeTable(table.id))}
-            >
-              Free this table
-            </button>
-          )}
-          <button
-            className="text-rose-600 hover:underline"
-            onClick={() => {
-              if (
-                !confirm(
-                  `Delete ${table.name}?${table.groupName ? ` ${table.groupName} becomes unplaced.` : ""}`
-                )
-              )
-                return;
-              run(async () => {
-                await deleteTable(table.id);
-                onClose();
-              });
-            }}
-          >
-            Delete table
-          </button>
-        </div>
+      )}
+
+      {(table.shape !== "round" || isOwner) && (
+        <details className="border-t border-stone-100 pt-3 text-sm">
+          <summary className="cursor-pointer select-none text-xs text-stone-400 hover:text-stone-600">
+            Table layout options
+          </summary>
+          <div className="mt-3 flex flex-wrap items-center gap-4">
+            {table.shape !== "round" && (
+              <button
+                className="text-stone-600 hover:underline"
+                onClick={() => run(() => rotateTable(table.id))}
+              >
+                Rotate 45°
+              </button>
+            )}
+            {isOwner && (
+              <button
+                className="text-rose-600 hover:underline"
+                onClick={() => {
+                  if (
+                    !confirm(
+                      `Delete ${table.name} from the floor plan?${
+                        table.groupName ? ` “${table.groupName}” goes back to “Groups to place”.` : ""
+                      } This removes the table itself, not just its group.`
+                    )
+                  )
+                    return;
+                  run(async () => {
+                    await deleteTable(table.id);
+                    onClose();
+                  });
+                }}
+              >
+                Delete this table from the plan…
+              </button>
+            )}
+          </div>
+        </details>
       )}
     </div>
   );

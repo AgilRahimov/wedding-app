@@ -12,7 +12,13 @@ export type MapTable = {
   seated: number;
   // The group that sits at this table (1 group = 1 table); null while free.
   groupName?: string | null;
+  // Whose guests sit here — drives the table's colour on the family's plan.
+  side?: TableSide;
 };
+
+// "mixed" = the group holds both sides (or some invitations have no side
+// yet) — shown in amber, because a table is meant to be one side's.
+export type TableSide = "groom" | "bride" | "mixed" | null;
 
 // The venue's standard table sizes. Seats beyond the standard are the
 // "squeezed in" 13th/14th chair and are drawn in amber so a stretched
@@ -96,6 +102,14 @@ export function TableGlyph({
     }
   } else if (over) {
     fill = "#ffe4e6"; stroke = "#fb7185"; num = "#9f1239"; sub = "#9f1239";
+  } else if (t.seated > 0 && t.side === "groom") {
+    // Groom's side: light blue, the outline firmer once the table is full.
+    fill = "#e0f2fe"; stroke = full ? "#38bdf8" : "#7dd3fc"; num = "#075985"; sub = "#0369a1";
+  } else if (t.seated > 0 && t.side === "bride") {
+    // Bride's side: light pink.
+    fill = "#fce7f3"; stroke = full ? "#f472b6" : "#f9a8d4"; num = "#9d174d"; sub = "#be185d";
+  } else if (t.seated > 0 && t.side === "mixed") {
+    fill = "#fef3c7"; stroke = "#fbbf24"; num = "#92400e"; sub = "#b45309";
   } else if (full) {
     fill = "#ecfdf5"; stroke = "#34d399"; num = "#065f46"; sub = "#047857";
   } else if (t.seated > 0) {
@@ -151,7 +165,19 @@ export function TableGlyph({
                   cx={Math.round(sx * 10) / 10}
                   cy={Math.round(sy * 10) / 10}
                   r={3.2}
-                  fill={taken ? (extra ? "#f59e0b" : "#10b981") : extra ? "none" : "#ffffff"}
+                  fill={
+                    taken
+                      ? extra
+                        ? "#f59e0b"
+                        : t.side === "groom"
+                          ? "#0ea5e9"
+                          : t.side === "bride"
+                            ? "#ec4899"
+                            : "#10b981"
+                      : extra
+                        ? "none"
+                        : "#ffffff"
+                  }
                   stroke={taken ? "none" : extra ? "#f59e0b" : "#d6d3d1"}
                   strokeWidth={1.1}
                 />

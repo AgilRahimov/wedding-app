@@ -35,15 +35,18 @@ export function RsvpDot({ rsvp }: { rsvp: string }) {
   );
 }
 
-/** A centred overlay dialog. Clicking the dark backdrop or "close" closes it. */
+/** A centred overlay dialog. Clicking the dark backdrop or the big ✕ closes
+ *  it. `size="md"` is the narrower popup (one table's details). */
 export function Modal({
   title,
   onClose,
   children,
+  size = "lg",
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  size?: "md" | "lg";
 }) {
   return (
     <div
@@ -51,13 +54,22 @@ export function Modal({
       onClick={onClose}
     >
       <div
-        className="mx-auto w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-xl"
+        role="dialog"
+        aria-label={title}
+        className={`mx-auto w-full ${
+          size === "md" ? "max-w-lg" : "max-w-3xl"
+        } overflow-hidden rounded-2xl bg-white shadow-xl`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-stone-100 bg-stone-50/70 px-4 py-3">
-          <h2 className="text-sm font-medium">{title}</h2>
-          <button onClick={onClose} className="text-sm text-stone-500 hover:underline">
-            close
+        <div className="flex items-center justify-between gap-3 border-b border-stone-100 bg-stone-50/70 py-2 pl-4 pr-2">
+          <h2 className="text-base font-medium">{title}</h2>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            title="Close"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-3xl leading-none text-stone-500 transition hover:bg-stone-200 hover:text-stone-900"
+          >
+            ×
           </button>
         </div>
         {children}

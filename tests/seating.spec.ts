@@ -37,9 +37,11 @@ test("seat a group at its table, then free the table", async ({ page }) => {
   await page.reload();
   await expect(page.getByLabel(new RegExp(`^Table 1 — ${coming - 1} of`))).toBeVisible();
 
-  // freeing the table makes the group unplaced again
+  // clicking the table opens its popup; removing the group frees the table
   await page.getByLabel(new RegExp(`^Table 1 — ${coming - 1} of`)).click();
-  await page.getByRole("button", { name: "Free this table" }).click();
+  await expect(page.getByRole("dialog", { name: "Table 1" })).toBeVisible();
+  await page.getByRole("button", { name: "Remove group from this table" }).click();
+  await page.getByRole("button", { name: "Close" }).click();
   await expect(page.getByLabel(/^Table 1 — 0 of/)).toBeVisible();
   const freed = await db.seatTable.findFirstOrThrow({ where: { name: "Table 1" } });
   expect(freed.groupName).toBeNull();

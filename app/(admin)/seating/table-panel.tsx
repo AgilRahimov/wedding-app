@@ -2,41 +2,47 @@
 
 import { useEffect, useState } from "react";
 import { btnGhost, btnPrimary, inputCls, RsvpDot } from "@/components/ui";
-import { assignGuest, clearTable, deleteTable, rotateTable, seatGuests, updateTable } from "./actions";
-import type { SeatingGuest } from "./seating-screen";
+import { deleteTable, freeTable, rotateTable, seatGroup, updateTable } from "./actions";
+import type { SeatingGroup } from "./seating-screen";
 
 // The venue's standard sizes — anything above is a squeezed-in extra chair.
 function standardSeats(shape: string) {
   return shape === "oval" ? 18 : 12;
 }
 
-/** The right-hand panel for one table: who sits there, seat-the-party
- *  shortcut, add/remove a chair, rename, rotate, empty, delete. */
+/** The right-hand panel for one table: the group that sits there with all its
+ *  people, seat-a-group picker while it is free, add/remove a chair, rename,
+ *  rotate, free, delete. */
 export function TablePanel({
   table,
-  guests,
-  selectedGuest,
-  partyMatesToSeat,
+  group,
+  unplaced,
   onClose,
   run,
 }: {
-  table: { id: string; name: string; capacity: number; seated: number; shape: string };
-  guests: SeatingGuest[];
-  selectedGuest: SeatingGuest | null;
-  partyMatesToSeat: SeatingGuest[];
+  table: {
+    id: string;
+    name: string;
+    capacity: number;
+    seated: number;
+    shape: string;
+    groupName: string | null;
+  };
+  group: SeatingGroup | null;
+  unplaced: SeatingGroup[];
   onClose: () => void;
   run: (fn: () => Promise<unknown>) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(table.name);
+  const [pickedGroup, setPickedGroup] = useState("");
 
   useEffect(() => {
     setName(table.name);
     setEditing(false);
+    setPickedGroup("");
   }, [table.id, table.name]);
 
-  const confirmed = guests.filter((g) => g.rsvp === "yes").length;
-  const declined = guests.filter((g) => g.rsvp === "no").length;
   const extra = table.capacity - standardSeats(table.shape);
 
   return (
@@ -47,13 +53,18 @@ export function TablePanel({
           close
         </button>
       </div>
-      <p className="mt-0.5 text-sm text-stone-500">
-        {table.seated} of {table.capacity} seats taken
-      </p>
-      {guests.length > 0 && (
-        <p className="text-xs text-stone-400">
-          {confirmed} confirmed{declined > 0 && ` · ${declined} declined`}
-        </p>
+      {group ? (
+        <>
+          <p className="mt-0.5 text-sm text-stone-700">{group.name}</p>
+          <p className="text-xs text-stone-400">
+            {group.parties.length}{" "}
+            {group.parties.length === 1 ? "invitation" : "invitations"} · {group.coming} of{" "}
+            {table.capacity} seats
+            {group.declined > 0 && ` · ${group.declined} declined`}
+          </p>
+        </>
+      ) : (
+        <p className="mt-0.5 text-sm text-stone-500">Free — no group sits here yet.</p>
       )}
 
       <div className="mt-3 flex items-center gap-2 text-sm">
@@ -79,61 +90,57 @@ export function TablePanel({
         >
           +
         </button>
-        {extra > 0 && (
-          <span className="text-xs text-amber-600">
-            {extra} squeezed in
-          </span>
-        )}
+        {extra > 0 && <span className="text-xs text-amber-600">{extra} squeezed in</span>}
       </div>
 
-      {selectedGuest && partyMatesToSeat.length > 1 && (
-        <button
-          className={`${btnGhost} mt-3 w-full`}
-          onClick={() =>
-            run(() =>
-              seatGuests(
-                partyMatesToSeat.map((g) => g.id),
-                table.id
-              )
-            )
-          }
-        >
-          Seat all {partyMatesToSeat.length} of {selectedGuest.party} here
-        </button>
+      {!group && unplaced.length > 0 && (
+        <div className="mt-3 flex gap-2">
+          <select
+            value={pickedGroup}
+            onChange={(e) => setPickedGroup(e.target.value)}
+            className={`${inputCls} min-w-0 flex-1`}
+            aria-label="Group to seat here"
+          >
+            <option value="">Seat a group here…</option>
+            {unplaced.map((g) => (
+              <option key={g.name} value={g.name}>
+                {g.name} — {g.coming} {g.coming === 1 ? "person" : "people"}
+              </option>
+            ))}
+          </select>
+          <button
+            className={btnPrimary}
+            disabled={!pickedGroup}
+            onClick={() => run(() => seatGroup(pickedGroup, table.id))}
+          >
+            Seat
+          </button>
+        </div>
       )}
 
-      <ul className="mt-3 flex flex-col gap-1">
-        {guests.length === 0 && (
-          <li className="py-3 text-sm text-stone-400">Nobody seated here yet.</li>
-        )}
-        {guests.map((g) => (
-          <li
-            key={g.id}
-            className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-1.5 text-sm ${
-              g.rsvp === "no" ? "border-amber-200 bg-amber-50" : "border-stone-100"
-            }`}
-          >
-            <span className="flex items-center gap-2">
-              <RsvpDot rsvp={g.rsvp} />
-              <span>
-                <span
-                  className={`font-medium ${g.rsvp === "no" ? "text-stone-500 line-through" : ""}`}
-                >
-                  {g.isChild ? "🧒 " : ""}
-                  {g.name}
-                </span>
-                <span className="block text-xs text-stone-500">{g.party}</span>
+      {group && (
+        <ul className="mt-3 flex flex-col gap-1">
+          {group.parties.map((p) => (
+            <li key={p.id} className="rounded-lg border border-stone-100 px-3 py-1.5 text-sm">
+              <span className="font-medium">{p.name}</span>
+              <span className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
+                {p.members.map((m) => (
+                  <span
+                    key={m.id}
+                    className={`flex items-center gap-1 text-xs ${
+                      m.rsvp === "no" ? "text-stone-400 line-through" : "text-stone-600"
+                    }`}
+                  >
+                    <RsvpDot rsvp={m.rsvp} />
+                    {m.isChild ? "🧒 " : ""}
+                    {m.name}
+                  </span>
+                ))}
               </span>
-            </span>
-            <button
-              className="text-xs text-rose-600 hover:underline"
-              onClick={() => run(() => assignGuest(g.id, null))}
-            >
-              remove
-            </button>
-          </li>
-        ))}
-      </ul>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {editing ? (
         <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-stone-100 pt-3">
@@ -169,18 +176,23 @@ export function TablePanel({
               Rotate 45°
             </button>
           )}
-          {guests.length > 0 && (
+          {group && (
             <button
               className="text-stone-600 hover:underline"
-              onClick={() => run(() => clearTable(table.id))}
+              onClick={() => run(() => freeTable(table.id))}
             >
-              Empty table
+              Free this table
             </button>
           )}
           <button
             className="text-rose-600 hover:underline"
             onClick={() => {
-              if (!confirm(`Delete ${table.name}? Anyone seated there becomes unseated.`)) return;
+              if (
+                !confirm(
+                  `Delete ${table.name}?${table.groupName ? ` ${table.groupName} becomes unplaced.` : ""}`
+                )
+              )
+                return;
               run(async () => {
                 await deleteTable(table.id);
                 onClose();

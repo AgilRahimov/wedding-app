@@ -87,8 +87,6 @@ model Guest {
   isChild     Boolean    @default(false)
   age         Int?
   notes       String?
-  tableId     String?
-  table       SeatTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }
@@ -99,6 +97,11 @@ model SeatTable {
   capacity  Int     @default(10)
   sortOrder Int     @default(0)
   notes     String?
+  // The one group that sits at this table — 1 group = 1 table, which the
+  // unique constraint enforces. Null while the table is free. A guest's seat
+  // is derived from this: they sit wherever their household's group's table
+  // is, so there is no per-person seat record to keep in sync.
+  groupName String? @unique
   // Position on the venue floor plan, as a percentage of the room's
   // width and height, so the plan scales to any screen size.
   x         Float   @default(50)
@@ -110,7 +113,6 @@ model SeatTable {
   // Degrees, clockwise. Lets the corner ovals sit at an angle and decides
   // which way a half-round table's flat side faces (0° = flat side on the right).
   rotation  Float   @default(0)
-  guests    Guest[]
 }
 
 // A version of the wedding day. Not every guest has the same one:

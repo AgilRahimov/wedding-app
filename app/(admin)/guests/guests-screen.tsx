@@ -50,6 +50,7 @@ export function GuestsScreen({
   weddingDate,
   savedGroupOrder,
   groupPlanRev,
+  groupTables,
 }: {
   parties: PartyView[];
   programmes: ProgrammeOption[];
@@ -57,6 +58,8 @@ export function GuestsScreen({
   weddingDate: string;
   savedGroupOrder: string;
   groupPlanRev: number;
+  // Group name → its table's short number ("23"), from the Seating screen.
+  groupTables: Record<string, string>;
 }) {
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState("all");
@@ -495,6 +498,7 @@ export function GuestsScreen({
           <GroupsBoard
             orderedGroups={orderedGroups}
             groupPlanRev={groupPlanRev}
+            groupTables={groupTables}
             ungroupedTotal={ungroupedTotal}
             groupFilter={groupFilter}
             onGroupFilter={setGroupFilter}

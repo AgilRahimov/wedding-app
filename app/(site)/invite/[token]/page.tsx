@@ -52,7 +52,6 @@ export default async function InvitePage({
     include: {
       guests: {
         orderBy: [{ isPlusOne: "asc" }, { createdAt: "asc" }, { id: "asc" }],
-        include: { table: true },
       },
       programme: { include: { items: { orderBy: { sortOrder: "asc" } } } },
       hotel: true,
@@ -70,23 +69,14 @@ export default async function InvitePage({
 
   const [info, tables] = await Promise.all([
     db.eventInfo.findUniqueOrThrow({ where: { id: 1 } }),
-    db.seatTable.findMany({
-      orderBy: { sortOrder: "asc" },
-      include: { _count: { select: { guests: true } } },
-    }),
+    db.seatTable.findMany({ orderBy: { sortOrder: "asc" } }),
   ]);
 
   const closed = rsvpIsClosed(info.rsvpDeadline);
   const programme = household.programme;
 
-  // A party normally shares one table; show whichever tables they actually have.
-  const partyTables = [
-    ...new Map(
-      household.guests
-        .filter((g) => g.table)
-        .map((g) => [g.table!.id, g.table!])
-    ).values(),
-  ];
+  // 1 group = 1 table: the party sits wherever its group's table is.
+  const partyTable = tables.find((t) => t.groupName === household.group) ?? null;
   const anyoneComing = household.guests.some((g) => g.rsvp === "yes");
 
   const travel = household.isInternational
@@ -146,11 +136,8 @@ export default async function InvitePage({
 
       <div className="mt-12 flex flex-col gap-4">
         {/* Their table */}
-        {anyoneComing && partyTables.length > 0 && (
-          <Card
-            eyebrow="Your table"
-            title={partyTables.map((t) => t.name).join(" & ")}
-          >
+        {anyoneComing && partyTable && (
+          <Card eyebrow="Your table" title={partyTable.name}>
             <p>
               Your places are set. The plan below shows where you are sitting — your table
               is marked in gold.
@@ -158,7 +145,7 @@ export default async function InvitePage({
             <div className="mt-5">
               <VenueMap
                 variant="guest"
-                highlightTableId={partyTables[0].id}
+                highlightTableId={partyTable.id}
                 platformLabel={info.coupleNames || "The couple"}
                 tables={tables.map((t) => ({
                   id: t.id,
@@ -168,7 +155,8 @@ export default async function InvitePage({
                   y: t.y,
                   shape: t.shape,
                   rotation: t.rotation,
-                  seated: t._count.guests,
+                  // Who sits where stays private — the guest map draws no seats.
+                  seated: 0,
                 }))}
               />
             </div>

@@ -8,60 +8,41 @@ import { requireAdminAction } from "@/lib/session";
 function refresh() {
   revalidatePath("/seating");
   revalidatePath("/dashboard");
-}
-
-/** Seat one person, or clear their seat when tableId is null. */
-export async function assignGuest(guestId: string, tableId: string | null) {
-  const session = await requireAdminAction();
-  const g = await db.guest.update({
-    where: { id: guestId },
-    data: { tableId },
-    include: { table: true },
-  });
-  await logAction(
-    session.name,
-    tableId ? `seated ${g.name} at ${g.table?.name ?? "a table"}` : `freed ${g.name}’s seat`
-  );
-  refresh();
+  // Group numbers ARE table numbers, so the Guests screen shows them too.
+  revalidatePath("/guests");
 }
 
 /**
- * Seat several people at once — the common case, a whole party together.
- * Takes exact guest ids rather than a household, so it seats precisely who was
- * picked and never silently moves a party member already seated elsewhere.
+ * Seat a whole group at a table — the 1-group-1-table rule. Any table the
+ * group held before is freed first, and a group already at the target simply
+ * becomes unplaced (it is never merged or moved somewhere else silently).
  */
-export async function seatGuests(guestIds: string[], tableId: string) {
+export async function seatGroup(group: string, tableId: string) {
   const session = await requireAdminAction();
-  if (guestIds.length === 0) return;
-  await db.guest.updateMany({ where: { id: { in: guestIds } }, data: { tableId } });
-  const table = await db.seatTable.findUnique({ where: { id: tableId } });
+  const name = group.trim();
+  if (!name || name === "Ungrouped") {
+    throw new Error("Put these parties in a real group first — Ungrouped cannot take a table.");
+  }
+  const table = await db.seatTable.findUniqueOrThrow({ where: { id: tableId } });
+  await db.$transaction([
+    // Clear the group's previous table before setting the new one, or the
+    // unique groupName constraint would (rightly) reject the move.
+    db.seatTable.updateMany({ where: { groupName: name }, data: { groupName: null } }),
+    db.seatTable.update({ where: { id: tableId }, data: { groupName: name } }),
+  ]);
+  await logAction(session.name, `seated group ${name} at ${table.name}`);
+  refresh();
+}
+
+/** Free a table — its group becomes unplaced (nobody is deleted or moved). */
+export async function freeTable(tableId: string) {
+  const session = await requireAdminAction();
+  const table = await db.seatTable.findUniqueOrThrow({ where: { id: tableId } });
+  await db.seatTable.update({ where: { id: tableId }, data: { groupName: null } });
   await logAction(
     session.name,
-    `seated ${guestIds.length} ${guestIds.length === 1 ? "person" : "people"} at ${table?.name ?? "a table"}`
+    table.groupName ? `freed ${table.name} (group ${table.groupName} is unplaced)` : `freed ${table.name}`
   );
-  refresh();
-}
-
-/**
- * The end-of-month reconciliation: free the seats of everyone who has since said
- * no. Returns how many seats were freed so the screen can say so.
- */
-export async function freeDeclinedSeats() {
-  const session = await requireAdminAction();
-  const { count } = await db.guest.updateMany({
-    where: { rsvp: "no", tableId: { not: null } },
-    data: { tableId: null },
-  });
-  await logAction(session.name, `freed ${count} ${count === 1 ? "seat" : "seats"} held after declining`);
-  refresh();
-  return count;
-}
-
-export async function clearTable(tableId: string) {
-  const session = await requireAdminAction();
-  const { count } = await db.guest.updateMany({ where: { tableId }, data: { tableId: null } });
-  const table = await db.seatTable.findUnique({ where: { id: tableId } });
-  await logAction(session.name, `emptied ${table?.name ?? "a table"} (${count} ${count === 1 ? "seat" : "seats"})`);
   refresh();
 }
 
@@ -107,7 +88,7 @@ export async function updateTable(
 
 export async function deleteTable(tableId: string) {
   const session = await requireAdminAction();
-  // Guests keep their record and simply become unseated (onDelete: SetNull).
+  // The group that sat here simply becomes unplaced; nobody is deleted.
   const t = await db.seatTable.delete({ where: { id: tableId } });
   await logAction(session.name, `deleted ${t.name} from the plan`);
   refresh();

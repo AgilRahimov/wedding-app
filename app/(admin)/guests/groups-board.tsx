@@ -15,6 +15,7 @@ import { renameGroup, saveGroupOrder, savePartyOrder } from "./actions";
 export function GroupsBoard({
   orderedGroups,
   groupPlanRev,
+  groupTables,
   ungroupedTotal,
   groupFilter,
   onGroupFilter,
@@ -27,6 +28,8 @@ export function GroupsBoard({
 }: {
   orderedGroups: [string, number][];
   groupPlanRev: number;
+  // Group name → its table's short number ("23"), from the Seating screen.
+  groupTables: Record<string, string>;
   ungroupedTotal: number;
   groupFilter: string;
   onGroupFilter: (g: string) => void;
@@ -102,11 +105,10 @@ export function GroupsBoard({
   const order = localOrder ?? propsOrder;
   const totals = new Map(orderedGroups);
 
-  // Group numbers ARE the box order — they follow the boxes live as they are
-  // dragged around, and "Ungrouped" is always the last number. Printouts show
+  // A group's number IS its table's number — 1 group = 1 table, assigned on
+  // the Seating screen. A group with no table yet shows "—". Printouts show
   // the same numbering, stamped with the plan's revision.
-  const groupNumber = (g: string) =>
-    g === "Ungrouped" ? order.length + 1 : order.indexOf(g) + 1;
+  const groupNumber = (g: string) => groupTables[g] ?? "—";
 
   const byGroup = new Map<string, PartyView[]>();
   for (const p of parties) {

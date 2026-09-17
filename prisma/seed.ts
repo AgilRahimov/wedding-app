@@ -181,15 +181,17 @@ async function seedTables() {
   // sent its plan hold an older placeholder room (round/long tables only) — that
   // one gets swapped out here, but only while nobody is seated on it, so a room
   // the family has already worked on is never touched.
-  const existing = await prisma.seatTable.findMany({ select: { shape: true } });
+  const existing = await prisma.seatTable.findMany({
+    select: { shape: true, groupName: true },
+  });
   const hasRealRoom = existing.some((t) => t.shape === "half" || t.shape === "oval");
   if (hasRealRoom) return;
 
   if (existing.length > 0) {
-    const seated = await prisma.guest.count({ where: { tableId: { not: null } } });
+    const seated = existing.filter((t) => t.groupName).length;
     if (seated > 0) {
       console.log(
-        `Kept the old placeholder floor plan: ${seated} guests are already seated on it.`
+        `Kept the old placeholder floor plan: ${seated} tables already have their groups.`
       );
       return;
     }

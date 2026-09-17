@@ -68,8 +68,8 @@ function dates(row: Row, keys: string[]): Row {
 /**
  * Replace the database's contents with the backup's. Family sign-in accounts
  * are not part of backups and are left untouched. Ids are kept, so every link
- * (party → programme/hotel, guest → seat) survives, and existing invite links
- * keep working.
+ * (party → programme/hotel, table → group) survives, and existing invite
+ * links keep working.
  */
 export async function applyBackup(db: Db, backup: Backup) {
   // Clear out, children before parents.
@@ -117,7 +117,11 @@ export async function applyBackup(db: Db, backup: Backup) {
       ) as Prisma.HouseholdCreateManyInput[],
     });
     const guests = households.flatMap((h) =>
-      (h.guests ?? []).map((g) => dates(g, ["createdAt", "updatedAt"]))
+      // Backups from before 1-group-1-table carried a per-person seat
+      // (tableId); that field no longer exists and is simply dropped.
+      (h.guests ?? []).map(({ tableId: _legacySeat, ...g }) =>
+        dates(g, ["createdAt", "updatedAt"])
+      )
     );
     guestCount = guests.length;
     if (guests.length) {

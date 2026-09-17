@@ -28,6 +28,12 @@ export type RoomTable = {
 // so nothing moved on screen.
 export const ROOM_CANVAS = { w: 800, h: 945 };
 
+/** "Table 12" → "12" — the short number shown on the plan, next to a group's
+ *  name on the Guests screen, and in the printed report. */
+export function tableNo(name: string): string {
+  return name.replace(/^Table\s+/i, "");
+}
+
 const round1 = (v: number) => Math.round(v * 10) / 10;
 const pct = (x: number, y: number) => ({
   x: round1((x / ROOM_CANVAS.w) * 100),

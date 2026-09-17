@@ -1,10 +1,10 @@
 import { db } from "./db";
 
-// The grouping plan: groups in the family's box order carry numbers 1, 2, 3…
-// ("Ungrouped" is always last), and the whole plan carries a revision number
-// so two printouts can be checked against each other. The revision maintains
-// itself: whenever a page that shows it renders, the current plan (group
-// order, group names, and which invitation sits in which group) is
+// The grouping plan: 1 group = 1 table, so a group's number IS its table's
+// number, and the whole plan carries a revision so two printouts can be
+// checked against each other. The revision maintains itself: whenever a page
+// that shows it renders, the current plan (group order, group names, which
+// invitation sits in which group, and which table each group sits at) is
 // fingerprinted and compared with the stored one — if it changed, the
 // revision goes up by one. Nobody has to remember to bump anything.
 
@@ -31,13 +31,14 @@ function fingerprint(text: string): string {
 
 /**
  * The current revision of the grouping plan. `orderedGroups` must be the full
- * numbered list (Ungrouped last) with each group's household ids.
+ * list in box order (Ungrouped last) with each group's household ids and the
+ * name of the table it sits at (null while it has none).
  */
 export async function groupingRevision(
-  orderedGroups: { name: string; householdIds: string[] }[]
+  orderedGroups: { name: string; householdIds: string[]; table?: string | null }[]
 ): Promise<number> {
   const plan = orderedGroups
-    .map((g) => `${g.name}:${[...g.householdIds].sort().join(",")}`)
+    .map((g) => `${g.name}@${g.table ?? ""}:${[...g.householdIds].sort().join(",")}`)
     .join("|");
   const hash = fingerprint(plan);
 

@@ -20,7 +20,6 @@ type Member = {
   rsvp: string;
   isChild: boolean;
   isPlusOne: boolean;
-  tableId: string | null;
 };
 type Party = { id: string; name: string; group: string; members: Member[] };
 
@@ -157,10 +156,14 @@ export default async function PrintPage() {
       rsvp: g.rsvp,
       isChild: g.isChild,
       isPlusOne: g.isPlusOne,
-      tableId: g.tableId,
     })),
   }));
 
+  // 1 group = 1 table: a person sits wherever their group's table is, so
+  // "seated" counts everyone (minus declines) in a group that has its table.
+  const placedGroups = new Set(
+    tables.filter((t) => t.groupName).map((t) => t.groupName!)
+  );
   const everyone = parties.flatMap((p) => p.members);
   const stats = {
     parties: parties.length,
@@ -168,7 +171,10 @@ export default async function PrintPage() {
     yes: everyone.filter((m) => m.rsvp === "yes").length,
     no: everyone.filter((m) => m.rsvp === "no").length,
     pending: everyone.filter((m) => m.rsvp === "pending").length,
-    seated: everyone.filter((m) => m.tableId).length,
+    seated: parties
+      .filter((p) => placedGroups.has(p.group))
+      .flatMap((p) => p.members)
+      .filter((m) => m.rsvp !== "no").length,
     seats: tables.reduce((n, t) => n + t.capacity, 0),
   };
 
@@ -184,13 +190,28 @@ export default async function PrintPage() {
   );
   if (byGroup.has("Ungrouped")) groupNames.push("Ungrouped");
 
-  // Group numbers follow the box order — 1, 2, 3…, Ungrouped last — and the
-  // plan's revision goes up whenever numbering or membership changes.
-  const groupNo = new Map(groupNames.map((g, i) => [g, i + 1]));
+  // A group's number IS its table's number (1 group = 1 table, assigned on
+  // the Seating screen); "—" means no table yet. The plan's revision goes up
+  // whenever numbering or membership changes.
+  const tableByGroup = new Map(
+    tables.filter((t) => t.groupName).map((t) => [t.groupName!, t.name])
+  );
+  const groupNo = new Map(
+    groupNames.map((g) => {
+      const table = tableByGroup.get(g);
+      return [g, table ? table.replace(/^Table\s+/i, "") : "—"];
+    })
+  );
+  // "9." for a placed group, a bare "—" for one with no table yet.
+  const noLabel = (g: string) => {
+    const n = groupNo.get(g);
+    return n === "—" ? "—" : `${n}.`;
+  };
   const rev = await groupingRevision(
     groupNames.map((g) => ({
       name: g,
       householdIds: (byGroup.get(g) ?? []).map((p) => p.id),
+      table: tableByGroup.get(g) ?? null,
     }))
   );
 
@@ -304,8 +325,9 @@ export default async function PrintPage() {
       <section style={PAGE_AFTER}>
         <h2 style={{ fontSize: "15pt", fontWeight: 600 }}>Groups</h2>
         <p style={{ fontSize: "10.5pt" }} className="mt-1 text-stone-600">
-          Numbers follow the box order on the Guests screen. Each line shows
-          invitations · <strong className="text-stone-900">people</strong>.
+          A group&apos;s number is its <strong className="text-stone-900">table</strong> on
+          the seating plan; “—” means no table yet. Each line shows invitations ·{" "}
+          <strong className="text-stone-900">people</strong>.
         </p>
         <div className="mt-3" style={{ display: "flex", gap: "10mm", alignItems: "flex-start" }}>
           {splitColumns(groupNames, 2).map((column, ci) => (
@@ -320,8 +342,7 @@ export default async function PrintPage() {
                     className="flex justify-between gap-3 border-b border-stone-200 py-1"
                   >
                     <span>
-                      <span className="tabular-nums text-stone-500">{groupNo.get(g)}.</span>{" "}
-                      {g}
+                      <span className="tabular-nums text-stone-500">{noLabel(g)}</span> {g}
                     </span>
                     <span className="whitespace-nowrap text-stone-500">
                       {list.length} · <strong className="text-stone-900">{people}</strong>
@@ -350,7 +371,7 @@ export default async function PrintPage() {
             >
               <div className="flex items-baseline justify-between gap-2 border-b border-stone-400 bg-stone-100 px-3 py-1.5">
                 <h3 style={{ fontSize: "14pt", fontWeight: 600 }}>
-                  <span className="tabular-nums text-stone-500">{groupNo.get(g)}.</span> {g}
+                  <span className="tabular-nums text-stone-500">{noLabel(g)}</span> {g}
                 </h3>
                 <span style={{ fontSize: "10pt" }} className="whitespace-nowrap text-stone-600">
                   {list.length} {list.length === 1 ? "invitation" : "invitations"} · {people}{" "}

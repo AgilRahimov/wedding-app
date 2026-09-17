@@ -240,13 +240,15 @@ export async function setGroupForParties(householdIds: string[], group: string) 
   refresh();
 }
 
-/** Remove a group: its parties go to "Ungrouped" (nobody is deleted). */
+/** Remove a group: its parties go to "Ungrouped" (nobody is deleted),
+ *  and the table it sat at becomes free. */
 export async function deleteGroup(name: string) {
   const session = await requireAdminAction();
   const { count } = await db.household.updateMany({
     where: { group: name },
     data: { group: "Ungrouped", sortOrder: await bottomOfGroup("Ungrouped") },
   });
+  await db.seatTable.updateMany({ where: { groupName: name }, data: { groupName: null } });
   await editGroupOrder((order) => order.filter((g) => g !== name));
   await logAction(session.name, `deleted group ${name} (${count} ${count === 1 ? "party" : "parties"} moved to Ungrouped)`);
   refresh();
@@ -261,6 +263,17 @@ export async function renameGroup(from: string, to: string) {
     where: { group: from },
     data: { group: target },
   });
+  // The group keeps its table under the new name. Renaming onto an existing
+  // group merges the two — then the target's table wins and this one is freed,
+  // so the merged group never claims two tables.
+  const linked = await db.seatTable.findUnique({ where: { groupName: from } });
+  if (linked) {
+    const targetTable = await db.seatTable.findUnique({ where: { groupName: target } });
+    await db.seatTable.update({
+      where: { id: linked.id },
+      data: { groupName: targetTable ? null : target },
+    });
+  }
   await editGroupOrder((order) => order.map((g) => (g === from ? target : g)));
   await logAction(session.name, `renamed group ${from} to ${target}`);
   refresh();

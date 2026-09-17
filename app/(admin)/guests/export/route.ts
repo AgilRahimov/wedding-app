@@ -10,17 +10,21 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   if (!(await getSession())) redirect("/login");
 
-  const households = await db.household.findMany({
-    include: {
-      guests: {
-        orderBy: [{ isPlusOne: "asc" }, { createdAt: "asc" }, { id: "asc" }],
-        include: { table: true },
+  const [households, tables] = await Promise.all([
+    db.household.findMany({
+      include: {
+        guests: {
+          orderBy: [{ isPlusOne: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+        },
+        programme: true,
+        hotel: true,
       },
-      programme: true,
-      hotel: true,
-    },
-    orderBy: [{ group: "asc" }, { name: "asc" }],
-  });
+      orderBy: [{ group: "asc" }, { name: "asc" }],
+    }),
+    db.seatTable.findMany({ where: { groupName: { not: null } } }),
+  ]);
+  // 1 group = 1 table: a party's table is its group's table.
+  const tableByGroup = new Map(tables.map((t) => [t.groupName!, t.name]));
 
   const origin = new URL(request.url).origin;
   const wb = new ExcelJS.Workbook();
@@ -62,7 +66,7 @@ export async function GET(request: Request) {
         child: g.isChild ? "yes" : "",
         age: g.age ?? "",
         rsvp: g.rsvp,
-        table: g.table?.name ?? "",
+        table: tableByGroup.get(h.group) ?? "",
         programme: h.programme?.name ?? "",
         abroad: h.isInternational ? "yes" : "",
         arrives: [h.arrivalDate, h.arrivalDetails].filter(Boolean).join(" · "),

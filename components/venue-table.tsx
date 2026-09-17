@@ -8,9 +8,10 @@ export type MapTable = {
   y: number;
   shape: string;
   rotation: number;
+  // People sitting here — the table's group's members who have not declined.
   seated: number;
-  // Someone seated here has since declined — needs looking at.
-  flagged?: boolean;
+  // The group that sits at this table (1 group = 1 table); null while free.
+  groupName?: string | null;
 };
 
 // The venue's standard table sizes. Seats beyond the standard are the
@@ -116,7 +117,11 @@ export function TableGlyph({
 
   return (
     <>
-      <title>{`${t.name} — ${t.seated} of ${t.capacity} seats taken`}</title>
+      <title>
+        {guest
+          ? t.name
+          : `${t.name}${t.groupName ? ` — ${t.groupName}` : ""} — ${t.seated} of ${t.capacity} seats taken`}
+      </title>
       {guest && isHighlight &&
         (t.shape === "oval" ? (
           <ellipse cx={cx} cy={cy} rx={72} ry={43} transform={`rotate(${t.rotation} ${cx} ${cy})`}
@@ -167,11 +172,6 @@ export function TableGlyph({
           fill={sub} style={{ pointerEvents: "none" }}>
           YOU
         </text>
-      )}
-      {!guest && t.flagged && (
-        <circle cx={cx + 20} cy={cy - 22} r={4.5} fill="#f59e0b" stroke="#ffffff" strokeWidth={1.5}>
-          <title>Someone seated here has declined</title>
-        </circle>
       )}
     </>
   );

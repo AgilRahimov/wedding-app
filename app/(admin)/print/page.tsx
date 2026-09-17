@@ -252,8 +252,8 @@ export default async function PrintPage() {
   // Stamped on every sheet, so mixed printouts give themselves away.
   const revisionLine = (
     <p style={{ fontSize: "11pt" }} className="mt-4 text-right text-stone-300">
-      Grouping plan rev <strong className="font-semibold text-stone-400">{rev}</strong>{" "}
-      · printed <strong className="font-semibold text-stone-400">{printedShort}</strong>
+      Grouping plan rev <strong className="font-semibold text-stone-600">{rev}</strong>{" "}
+      · printed <strong className="font-semibold text-stone-600">{printedShort}</strong>
     </p>
   );
 

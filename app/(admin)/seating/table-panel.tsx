@@ -74,11 +74,50 @@ export function SeatsStepper({
   );
 }
 
-/** The body of the popup for one table: the group that sits there with all
- *  its people, a seat-a-group picker while it is free, and "Remove group
- *  from this table". Tables carry numbers, not names, so there is nothing
- *  to rename. Deleting the table itself is tucked away and only offered to
- *  the owner. */
+/** The popup heading's colour — the table's side, the same as on the plan. */
+export function sideTone(side: TableSide): string {
+  if (side === "groom") return "border-sky-200 bg-sky-100";
+  if (side === "bride") return "border-pink-200 bg-pink-100";
+  if (side === "mixed") return "border-amber-200 bg-amber-100";
+  return "border-stone-200 bg-stone-100";
+}
+
+/** Second row of the popup's heading: the group at this table and X/X seats. */
+export function TableGroupLine({
+  table,
+  group,
+}: {
+  table: { capacity: number };
+  group: SeatingGroup | null;
+}) {
+  if (!group) {
+    return <p className="text-sm text-stone-600">Free — no group sits here yet.</p>;
+  }
+  const over = group.coming > table.capacity;
+  return (
+    <div className="flex items-baseline justify-between gap-4">
+      <p className="min-w-0 break-words text-base font-medium text-stone-900">{group.name}</p>
+      <p className="shrink-0 whitespace-nowrap">
+        {group.declined > 0 && (
+          <span className="mr-2 text-xs text-stone-600">{group.declined} declined</span>
+        )}
+        <span
+          className={`text-base font-semibold tabular-nums ${
+            over ? "text-red-600" : "text-stone-900"
+          }`}
+          title={`${group.coming} of ${table.capacity} seats taken`}
+        >
+          {group.coming}/{table.capacity}
+        </span>
+      </p>
+    </div>
+  );
+}
+
+/** The body of the popup for one table: everyone in its group, a
+ *  seat-a-group picker while it is free, and "Remove group from this
+ *  table". Tables carry numbers, not names, so there is nothing to rename.
+ *  Deleting the table itself is tucked away and only offered to the owner. */
 export function TablePanel({
   table,
   group,
@@ -104,31 +143,8 @@ export function TablePanel({
   const [pickedGroup, setPickedGroup] = useState("");
   useEffect(() => setPickedGroup(""), [table.id]);
 
-  const over = table.seated > table.capacity;
-
   return (
     <div className="flex flex-col gap-4 p-5">
-      {group ? (
-        <div>
-          <p className="flex items-center gap-2 text-base font-medium text-stone-900">
-            <SideDot side={group.side} />
-            {group.name}
-          </p>
-          <p className={`mt-0.5 text-sm ${over ? "font-medium text-rose-600" : "text-stone-500"}`}>
-            {group.coming} of {table.capacity} seats taken
-            {over && " — over capacity"}
-            <span className="font-normal text-stone-400">
-              {" · "}
-              {group.parties.length}{" "}
-              {group.parties.length === 1 ? "invitation" : "invitations"}
-              {group.declined > 0 && ` · ${group.declined} declined`}
-            </span>
-          </p>
-        </div>
-      ) : (
-        <p className="text-sm text-stone-500">This table is free — no group sits here yet.</p>
-      )}
-
       {!group && unplaced.length > 0 && (
         <div className="flex gap-2">
           <select

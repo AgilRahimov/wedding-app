@@ -36,20 +36,26 @@ export function RsvpDot({ rsvp }: { rsvp: string }) {
 }
 
 /** A centred overlay dialog. Clicking the dark backdrop or the big ✕ closes
- *  it. `size="md"` is the narrower popup (one table's details), and
- *  `headerExtra` puts controls in the header bar, right after the title. */
+ *  it. `size="md"` is the narrower popup (one table's details). The heading
+ *  can carry more than a title: `headerExtra` sits on the title's row,
+ *  `headerBelow` is a second row under it, and `headerTone` (border + bg
+ *  classes) colours the whole heading. */
 export function Modal({
   title,
   onClose,
   children,
   size = "lg",
   headerExtra,
+  headerBelow,
+  headerTone = "border-stone-200 bg-stone-100",
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   size?: "md" | "lg";
   headerExtra?: ReactNode;
+  headerBelow?: ReactNode;
+  headerTone?: string;
 }) {
   return (
     <div
@@ -64,17 +70,22 @@ export function Modal({
         } overflow-hidden rounded-2xl bg-white shadow-xl`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-4 border-b border-stone-200 bg-stone-100 py-2.5 pl-5 pr-2">
-          <h2 className="text-lg font-semibold tracking-tight text-stone-900">{title}</h2>
-          {headerExtra}
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            title="Close"
-            className="ml-auto flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-3xl leading-none text-stone-500 transition hover:bg-stone-300/60 hover:text-stone-900"
-          >
-            ×
-          </button>
+        <div className={`border-b ${headerTone}`}>
+          <div className="flex items-center gap-4 py-2.5 pl-5 pr-2">
+            <h2 className="text-lg font-semibold tracking-tight text-stone-900">{title}</h2>
+            {headerExtra}
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              title="Close"
+              className="ml-auto flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-3xl leading-none text-stone-600 transition hover:bg-black/10 hover:text-stone-900"
+            >
+              ×
+            </button>
+          </div>
+          {headerBelow && (
+            <div className="border-t border-black/5 px-5 py-2.5">{headerBelow}</div>
+          )}
         </div>
         {children}
       </div>

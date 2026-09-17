@@ -7,7 +7,7 @@ import type { TableSide } from "@/components/venue-table";
 import { tableNo } from "@/lib/room-layout";
 import { moveTable, seatGroup } from "./actions";
 import { AddTablePanel } from "./add-table-panel";
-import { SeatsStepper, SideDot, TablePanel } from "./table-panel";
+import { SeatsStepper, SideDot, TableGroupLine, TablePanel, sideTone } from "./table-panel";
 
 export type SeatingMember = {
   id: string;
@@ -396,7 +396,14 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
           title={openTable.name}
           size="md"
           onClose={() => setOpenTableId(null)}
+          headerTone={sideTone(openTable.side)}
           headerExtra={<SeatsStepper table={openTable} run={run} />}
+          headerBelow={
+            <TableGroupLine
+              table={openTable}
+              group={openTable.groupName ? (groupByName.get(openTable.groupName) ?? null) : null}
+            />
+          }
         >
           <TablePanel
             table={openTable}

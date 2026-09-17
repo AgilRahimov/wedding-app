@@ -176,36 +176,38 @@ export function VenueMap({
         style={{ height: "auto", touchAction: guest ? undefined : "none" }}
       >
         <g transform={`translate(${view.tx} ${view.ty}) scale(${view.s})`}>
-          {/* The room itself. The hall is drawn wider than the venue's plan
-              strictly needs — the family is over the 504 stock seats, so the
-              side margins are deliberate free space for extra tables. The
-              couple's platform backs onto the entrance wall, with the two
-              entrances either side of it. */}
+          {/* The room, in the proportions of the venue's September 2026 plan:
+              an octagon with a wide runway from the stage apron down to the
+              couple's platform, which stands on a low base against the
+              entrance wall with an entrance either side. The stage is drawn
+              only as far as it reaches into the hall — its size behind the
+              apron is nobody's concern here. */}
           <rect x={230} y={18} width={340} height={84} rx={6} fill={surf} stroke={wall} />
           <text x={400} y={66} textAnchor="middle" fontSize={11} letterSpacing={3} fill={label}>
             STAGE
           </text>
           <path
-            d="M180 100 H620 L770 250 V750 L620 880 H180 L30 750 V250 Z"
+            d="M122 100 H678 L770 178 V763 L678 826 H122 L30 763 V178 Z"
             fill="none"
             stroke={wall}
             strokeWidth={1.5}
           />
-          <rect x={360} y={102} width={80} height={690} fill={surf} />
-          <path d="M352 102 A48 48 0 0 0 448 102 Z" fill={surf} stroke={wall} />
-          <text x={400} y={420} textAnchor="middle" fontSize={9} letterSpacing={4} fill={label}
-            transform="rotate(90 400 420)">
+          <rect x={327} y={100} width={146} height={616} fill={surf} />
+          <path d="M327 100 A73 73 0 0 0 473 100 Z" fill={surf} stroke={wall} />
+          <text x={400} y={440} textAnchor="middle" fontSize={9} letterSpacing={4} fill={label}
+            transform="rotate(90 400 440)">
             RUNWAY
           </text>
-          <rect x={346} y={792} width={108} height={78} rx={8} fill={platFill} stroke={platStroke} />
-          <text x={400} y={835} textAnchor="middle" fontSize={10} fill={platText}>
+          <rect x={260} y={786} width={280} height={40} fill={surf} stroke={wall} />
+          <rect x={327} y={716} width={146} height={70} rx={8} fill={platFill} stroke={platStroke} />
+          <text x={400} y={755} textAnchor="middle" fontSize={10} fill={platText}>
             {platformLabel}
           </text>
-          <line x1={290} y1={928} x2={290} y2={902} stroke={arrows} strokeWidth={3} />
-          <path d="M284 906 L290 894 L296 906 Z" fill={arrows} />
-          <line x1={510} y1={928} x2={510} y2={902} stroke={arrows} strokeWidth={3} />
-          <path d="M504 906 L510 894 L516 906 Z" fill={arrows} />
-          <text x={400} y={922} textAnchor="middle" fontSize={10} letterSpacing={2} fill={label}>
+          <line x1={179} y1={880} x2={179} y2={852} stroke={arrows} strokeWidth={3} />
+          <path d="M173 856 L179 842 L185 856 Z" fill={arrows} />
+          <line x1={621} y1={880} x2={621} y2={852} stroke={arrows} strokeWidth={3} />
+          <path d="M615 856 L621 842 L627 856 Z" fill={arrows} />
+          <text x={400} y={870} textAnchor="middle" fontSize={10} letterSpacing={2} fill={label}>
             ENTRANCE
           </text>
 

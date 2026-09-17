@@ -180,7 +180,9 @@ async function seedTables() {
   // The room is the real Buta Palace layout. Databases seeded before the venue
   // sent its plan hold an older placeholder room (round/long tables only) — that
   // one gets swapped out here, but only while nobody is seated on it, so a room
-  // the family has already worked on is never touched.
+  // the family has already worked on is never touched. (When the venue sends a
+  // new plan, a migration clears the old room and this recreates the current
+  // one on the same build — see migration new_floor_plan_47_tables.)
   const existing = await prisma.seatTable.findMany({
     select: { shape: true, groupName: true },
   });

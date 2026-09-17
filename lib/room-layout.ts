@@ -1,13 +1,16 @@
-// The real Buta Palace hall, copied from the venue's floor plan (August 2026):
-// 28 round tables of 12, 8 half-round tables of 12 lining the central runway
-// (guests sit on the curve, facing the runway), and 4 oval tables of 18 angled
-// into the corners — 504 seats in all. The stage is at the top of the plan,
-// the couple's platform and the two entrances at the bottom.
+// The Buta Palace hall, copied from the venue's floor plan of September 2026
+// (drawn for a guest list heading towards 600): 35 round tables of 12, 8
+// half-round tables of 12 lining the central runway (guests sit on the
+// curve, facing the runway), and 4 oval tables of 18 set at an angle just
+// inside the second column — 588 seats in all. The stage is at the top of
+// the plan, the couple's platform and the two entrances at the bottom.
 //
-// Numbering, agreed with Agil: 1–8 are the half-rounds along the runway
-// (left side first), 9–22 the left block of rounds front-to-back, 23–36 the
-// right block, 37–40 the corner ovals. So a table number roughly tells a
-// guest where in the room to walk.
+// Numbering is the venue's own, from its drawing: 1–4 are the half-rounds
+// right of the runway (stage end first), 5 the top-right oval, 6–10 the
+// column of rounds beside them, 11 the bottom-right oval, 12–16 the next
+// column, 17–23 the rounds along the right wall; then the same again on the
+// left — 24–27 half-rounds, 28 oval, 29–33, 34 oval, 35–39, and 40–47 along
+// the left wall (eight there, one more than on the right).
 
 export type RoomTable = {
   name: string;
@@ -21,12 +24,7 @@ export type RoomTable = {
 
 // The drawing canvas of the floor plan. Table x/y in the database are
 // percentages of this canvas, so the plan scales to any screen.
-//
-// The canvas was widened from 700 to 800 on 14 Sep 2026 (extra side room for
-// tables beyond the venue's stock 504 seats); the standard layout sits
-// centred, and a migration remapped the stored positions of existing tables
-// so nothing moved on screen.
-export const ROOM_CANVAS = { w: 800, h: 945 };
+export const ROOM_CANVAS = { w: 800, h: 890 };
 
 /** "Table 12" → "12" — the short number shown on the plan, next to a group's
  *  name on the Guests screen, and in the printed report. */
@@ -40,6 +38,21 @@ const pct = (x: number, y: number) => ({
   y: round1((y / ROOM_CANVAS.h) * 100),
 });
 
+// The runway runs down the middle of the canvas (x = 400); every column of
+// tables is placed by its distance from it and mirrored to the other side.
+const MID = 400;
+const HALF = 73; // half-rounds: their flat side sits on the runway's edge
+const INNER = 162; // the column of rounds right beside the half-rounds
+const MIDDLE = 234; // the next column
+const OUTER = 303; // the rounds along the side walls
+const OVAL = 198; // the ovals, tucked between the inner and middle columns
+
+const HALF_YS = [241, 373, 505, 636];
+const INNER_YS = [305, 382, 459, 536, 613];
+const MIDDLE_YS = [295, 377, 460, 542, 624];
+const OVAL_TOP = 216;
+const OVAL_BOTTOM = 699;
+
 function buildTables(): RoomTable[] {
   const tables: RoomTable[] = [];
   let n = 1;
@@ -48,33 +61,24 @@ function buildTables(): RoomTable[] {
     n += 1;
   };
 
-  // 1–8: half-rounds along the runway. Rotation 0 = flat side on the right,
-  // so the left-hand ones face the runway as they are; the right-hand ones flip.
-  for (const y of [200, 340, 480, 620]) add(356, y, 12, "half", 0);
-  for (const y of [200, 340, 480, 620]) add(444, y, 12, "half", 180);
+  // Right of the runway. Half-round rotation 0 = flat side on the right, so
+  // these flip to put the flat side against the runway. The ovals lean the
+  // way the venue drew them: away from the runway at the top, and again
+  // away from it at the bottom.
+  for (const y of HALF_YS) add(MID + HALF, y, 12, "half", 180); // 1–4
+  add(MID + OVAL, OVAL_TOP, 18, "oval", -38); // 5
+  for (const y of INNER_YS) add(MID + INNER, y, 12, "round"); // 6–10
+  add(MID + OVAL, OVAL_BOTTOM, 18, "oval", 38); // 11
+  for (const y of MIDDLE_YS) add(MID + MIDDLE, y, 12, "round"); // 12–16
+  for (const y of [236, 317, 397, 477, 558, 638, 719]) add(MID + OUTER, y, 12, "round"); // 17–23
 
-  // 9–22: the left block of rounds, numbered front-to-back (stage end first).
-  const leftRounds: [number, number][] = [];
-  const columns: [number, number[]][] = [
-    [126, [300, 405, 510, 615, 720]],
-    [202, [270, 372, 474, 576, 678]],
-    [278, [305, 415, 525, 635]],
-  ];
-  for (const [x, ys] of columns) for (const y of ys) leftRounds.push([x, y]);
-  leftRounds.sort((a, b) => a[1] - b[1] || a[0] - b[0]);
-  for (const [x, y] of leftRounds) add(x, y, 12, "round");
-
-  // 23–36: the right block, the mirror image.
-  const rightRounds = leftRounds
-    .map(([x, y]): [number, number] => [ROOM_CANVAS.w - x, y])
-    .sort((a, b) => a[1] - b[1] || a[0] - b[0]);
-  for (const [x, y] of rightRounds) add(x, y, 12, "round");
-
-  // 37–40: the corner ovals, angled to follow the cut corners of the room.
-  add(170, 185, 18, "oval", -38);
-  add(630, 185, 18, "oval", 38);
-  add(170, 795, 18, "oval", 38);
-  add(630, 795, 18, "oval", -38);
+  // Left of the runway — the mirror image, with one extra table by the wall.
+  for (const y of HALF_YS) add(MID - HALF, y, 12, "half", 0); // 24–27
+  add(MID - OVAL, OVAL_TOP, 18, "oval", 38); // 28
+  for (const y of INNER_YS) add(MID - INNER, y, 12, "round"); // 29–33
+  add(MID - OVAL, OVAL_BOTTOM, 18, "oval", -38); // 34
+  for (const y of MIDDLE_YS) add(MID - MIDDLE, y, 12, "round"); // 35–39
+  for (const y of [202, 274, 345, 417, 489, 561, 632, 704]) add(MID - OUTER, y, 12, "round"); // 40–47
 
   return tables;
 }

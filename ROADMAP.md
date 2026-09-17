@@ -77,12 +77,13 @@ edits in one place and the guest's page updates instantly.
 - **Deploy before the travel module** so the family can do data entry from their phones. *(23 Aug)*
 - **Test data cleared at the Postgres migration** — production starts from the clean
   spreadsheet import, plus Ilya Briskman's +1 (his wife), Agil's one real edit. *(23 Aug)*
-- **The seating map is the venue's real room** (from Buta Palace's floor plan): 28 round
-  ×12 + 8 half-round ×12 along the runway + 4 corner ovals ×18 = 504 seats. Numbering is
-  ours — 1–8 runway, 9–22 left block, 23–36 right block, 37–40 ovals — until the venue
-  says it has official numbers. Agil & Samra sit on the platform at the runway's end (it
-  is drawn on the map, not a bookable table). Tables can be stretched to 13/14 seats from
-  the table panel; extra chairs show in amber. A database that already has seated guests
+- **The seating map is the venue's real room** (Buta Palace's floor plan of September
+  2026, for a list heading towards 600): 35 round ×12 + 8 half-round ×12 along the runway
+  + 4 ovals ×18 = 588 seats, 47 tables. Numbering is the venue's own from its drawing
+  (1–23 right of the runway, 24–47 left). Agil & Samra sit on the platform at the runway's
+  end (it is drawn on the map, not a bookable table). Tables can be stretched to 13/14
+  seats from the table panel; extra chairs show in amber. 1 group = 1 table since 17 Sep:
+  a group's number is its table's number. A database that already has seated guests
   never gets its layout swapped by the seed. *(28 Aug)*
 - **Local-first working mode**: the live site stays up (homepage for guests is enough
   for now); development and data entry happen on the laptop until things are stable.

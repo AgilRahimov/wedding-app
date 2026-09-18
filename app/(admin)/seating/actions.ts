@@ -95,10 +95,11 @@ export async function deleteTable(tableId: string) {
   refresh();
 }
 
-/** Turn a table 45° on the plan — for the angled corner ovals, and for
- *  choosing which way a half-round table's flat side faces. */
+/** Turn a table 45° on the plan — for the angled ovals, and for choosing
+ *  which way a half-round table's flat side faces. Owner only, like deleting:
+ *  it changes the venue's floor plan, not who sits where. */
 export async function rotateTable(tableId: string) {
-  await requireAdminAction();
+  await requireOwnerAction();
   const table = await db.seatTable.findUniqueOrThrow({ where: { id: tableId } });
   await db.seatTable.update({
     where: { id: tableId },

@@ -216,7 +216,9 @@ export function TablePanel({
         </div>
       )}
 
-      {(table.shape !== "round" || isOwner) && (
+      {/* Changing the floor plan itself (rotate, delete) is the owner's alone —
+          the rest of the family only decides who sits where. */}
+      {isOwner && (
         <details className="border-t border-stone-100 pt-3 text-sm">
           <summary className="cursor-pointer select-none text-xs text-stone-400 hover:text-stone-600">
             Table layout options

@@ -73,10 +73,6 @@ export function GuestsScreen({
   const [addGroup, setAddGroup] = useState<string | null>(null);
   const [showGroups, setShowGroups] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  // Groups added on this screen that have no parties yet. They show in every
-  // dropdown so parties can be moved in; once one is, the group lives in the
-  // database like the rest.
-  const [newGroups, setNewGroups] = useState<string[]>([]);
   // "boxes" (the default) shows one box per group, like the spreadsheet's
   // blocks — the view made for arranging groups on an iPad. "list" is the
   // dense working view. Each device remembers which it last used.
@@ -101,12 +97,25 @@ export function GuestsScreen({
     [programmes]
   );
 
+  // Every group with its party count. The saved list (the box order) is also
+  // the register of which groups exist, so a group in it shows up here even
+  // with no parties yet — creating a group saves it, and a group only goes
+  // away when it is deleted, never because its last party left.
   const groups = useMemo(() => {
     const counts = new Map<string, number>();
     for (const p of parties) counts.set(p.group, (counts.get(p.group) ?? 0) + 1);
-    for (const g of newGroups) if (!counts.has(g)) counts.set(g, 0);
+    try {
+      const saved = JSON.parse(savedGroupOrder);
+      if (Array.isArray(saved)) {
+        for (const g of saved) {
+          if (typeof g === "string" && g.trim() && g !== "Ungrouped" && !counts.has(g)) {
+            counts.set(g, 0);
+          }
+        }
+      }
+    } catch {}
     return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  }, [parties, newGroups]);
+  }, [parties, savedGroupOrder]);
 
   const sides = useMemo(
     () => [...new Set(parties.map((p) => p.side).filter(Boolean))] as string[],
@@ -293,8 +302,6 @@ export function GuestsScreen({
       {showGroups && (
         <GroupsPanel
           groups={groups}
-          onCreated={(name) => setNewGroups((cur) => [...cur, name])}
-          onRemoveEmpty={(name) => setNewGroups((cur) => cur.filter((g) => g !== name))}
           onDone={() => setShowGroups(false)}
         />
       )}
@@ -426,7 +433,6 @@ export function GuestsScreen({
               startTransition(async () => {
                 await setGroupForParties(ids, group);
                 setSelected(new Set());
-                setNewGroups((cur) => cur.filter((g) => g !== group));
               });
             }}
           >

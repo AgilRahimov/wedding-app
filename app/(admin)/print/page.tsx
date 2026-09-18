@@ -184,8 +184,10 @@ export default async function PrintPage() {
     list.push(p);
     byGroup.set(p.group, list);
   }
+  // Every group — the saved list includes empty ones (a table can be held
+  // for a group before any invitation is in it).
   const groupNames = orderGroupNames(
-    [...byGroup.keys()].filter((g) => g !== "Ungrouped"),
+    [...byGroup.keys(), ...tables.flatMap((t) => (t.groupName ? [t.groupName] : []))],
     info.groupOrder
   );
   if (byGroup.has("Ungrouped")) groupNames.push("Ungrouped");
@@ -220,6 +222,8 @@ export default async function PrintPage() {
   const sizeCounts = new Map<number, number>();
   for (const g of groupNames) {
     const people = (byGroup.get(g) ?? []).reduce((n, p) => n + p.members.length, 0);
+    // An empty group has no size to match against a table yet.
+    if (people === 0) continue;
     sizeCounts.set(people, (sizeCounts.get(people) ?? 0) + 1);
   }
   const sizeRows = [...sizeCounts.entries()].sort((a, b) => b[0] - a[0]);
@@ -404,7 +408,7 @@ export default async function PrintPage() {
               })}
               {list.length === 0 && (
                 <p style={{ fontSize: "11pt" }} className="px-3 py-2 text-stone-500">
-                  Nobody here.
+                  No invitations yet.
                 </p>
               )}
             </div>

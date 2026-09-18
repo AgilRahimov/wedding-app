@@ -2,19 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { btnGhost, inputCls } from "@/components/ui";
-import { deleteGroup, renameGroup } from "./actions";
+import { createGroup, deleteGroup, renameGroup } from "./actions";
 
-/** Manage the groups: add a new one, rename the imported "Section NN" blocks,
- *  or delete a group (its parties move to "Ungrouped" — nobody is deleted). */
+/** Manage the groups: add a new one, rename one, or delete one (its parties
+ *  move to "Ungrouped" — nobody is deleted). A new group is saved straight
+ *  away, even while it is empty. */
 export function GroupsPanel({
   groups,
-  onCreated,
-  onRemoveEmpty,
   onDone,
 }: {
   groups: [string, number][];
-  onCreated: (name: string) => void;
-  onRemoveEmpty: (name: string) => void;
   onDone: () => void;
 }) {
   const [editing, setEditing] = useState<string | null>(null);
@@ -41,23 +38,23 @@ export function GroupsPanel({
       alert(`The group "${name}" already exists.`);
       return;
     }
-    onCreated(name);
-    setNewName("");
-    setAdding(false);
+    startTransition(async () => {
+      try {
+        await createGroup(name);
+        setNewName("");
+        setAdding(false);
+      } catch (e) {
+        alert(e instanceof Error ? e.message : "Could not create the group");
+      }
+    });
   }
 
   function remove(name: string, count: number) {
-    // A brand-new empty group lives only on this screen — just take it off the list.
-    if (count === 0) {
-      onRemoveEmpty(name);
-      return;
-    }
-    if (
-      !confirm(
-        `Delete the group "${name}"? Its ${count} ${count === 1 ? "party moves" : "parties move"} to "Ungrouped" — no guests are deleted.`
-      )
-    )
-      return;
+    const what =
+      count === 0
+        ? `Delete the empty group "${name}"? If it has a table, the table becomes free.`
+        : `Delete the group "${name}"? Its ${count} ${count === 1 ? "party moves" : "parties move"} to "Ungrouped" — no guests are deleted. If it has a table, the table becomes free.`;
+    if (!confirm(what)) return;
     startTransition(async () => {
       try {
         await deleteGroup(name);
@@ -82,8 +79,12 @@ export function GroupsPanel({
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addGroup()}
               />
-              <button className="text-sm text-emerald-700 hover:underline" onClick={addGroup}>
-                add
+              <button
+                className="text-sm text-emerald-700 hover:underline"
+                onClick={addGroup}
+                disabled={isPending}
+              >
+                {isPending ? "saving…" : "add"}
               </button>
               <button
                 className="text-sm text-stone-500 hover:underline"
@@ -103,9 +104,9 @@ export function GroupsPanel({
         </div>
       </div>
       <p className="mt-1 text-xs text-stone-400">
-        Rename the imported &ldquo;Section NN&rdquo; blocks to real names. A new group is
-        kept once a party is put into it — tick parties in the list and use &ldquo;Move to
-        group&rdquo;, or set it when editing a party.
+        A new group is saved straight away, even while it is empty — it can already take
+        a table on the Seating screen. A group stays until you delete it here, even if
+        its last party leaves.
       </p>
       <ul className="mt-3 grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
         {groups.map(([g, n]) => (
@@ -137,9 +138,7 @@ export function GroupsPanel({
               <>
                 <span className="truncate">
                   {g}{" "}
-                  <span className="text-stone-400">
-                    ({n === 0 ? "new — empty" : n})
-                  </span>
+                  <span className="text-stone-400">({n === 0 ? "empty" : n})</span>
                 </span>
                 <button
                   className="text-stone-600 hover:underline"

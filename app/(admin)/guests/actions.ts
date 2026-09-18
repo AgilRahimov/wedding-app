@@ -4,6 +4,7 @@ import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { logAction } from "@/lib/audit";
 import { db } from "@/lib/db";
+import { savedGroupNames } from "@/lib/grouping";
 import { requireAdminAction } from "@/lib/session";
 
 const RSVP_VALUES = new Set(["pending", "yes", "no"]);
@@ -45,6 +46,7 @@ export async function saveParty(draft: PartyDraft) {
 
   if (!draft.name.trim()) throw new Error("Party name cannot be empty");
   const group = draft.group.trim() || "Ungrouped";
+  await registerGroups([group]);
   // Moving to a different group? The party joins that box at the bottom.
   const current = await db.household.findUniqueOrThrow({
     where: { id: draft.id },
@@ -182,6 +184,7 @@ export async function addParty(input: {
   const plusOnes = Math.max(0, Math.min(10, Math.floor(input.plusOnes || 0)));
   const fallback = await db.programme.findFirst({ where: { isDefault: true } });
   const group = input.group.trim() || "Ungrouped";
+  await registerGroups([group]);
 
   await db.household.create({
     data: {
@@ -209,6 +212,8 @@ export async function addParty(input: {
 
 export async function deleteParty(householdId: string) {
   const session = await requireAdminAction();
+  // The party's group stays, even if this was its last invitation.
+  await registerGroups();
   // Guests are removed automatically (onDelete: Cascade in the schema).
   const h = await db.household.delete({
     where: { id: householdId },
@@ -221,13 +226,14 @@ export async function deleteParty(householdId: string) {
   refresh();
 }
 
-/** Move whole parties into a group — also how a brand-new group gets its
- *  first members (groups are just names on parties; an empty one isn't stored). */
+/** Move whole parties into a group (a new name creates the group). The
+ *  groups they leave stay, even if that empties them. */
 export async function setGroupForParties(householdIds: string[], group: string) {
   const session = await requireAdminAction();
   const name = group.trim();
   if (!name) throw new Error("Give the group a name");
   if (householdIds.length === 0) return;
+  await registerGroups([name]);
   await db.household.updateMany({
     where: { id: { in: householdIds } },
     // All arrive at the bottom of the box together (A→Z among themselves).
@@ -237,6 +243,57 @@ export async function setGroupForParties(householdIds: string[], group: string) 
     session.name,
     `moved ${householdIds.length} ${householdIds.length === 1 ? "party" : "parties"} to group ${name}`
   );
+  refresh();
+}
+
+/**
+ * Make sure the saved list of group names (see savedGroupNames) includes
+ * every group that has invitations right now, plus any `extra` names about
+ * to come into use. Called before anything that can empty a group, so a
+ * group never vanishes because its last invitation left — it just becomes an
+ * empty box, still holding its table. Groups join the list at the end, A→Z:
+ * exactly where the screens already showed them, so nothing jumps.
+ */
+async function registerGroups(extra: string[] = []) {
+  const [info, rows] = await Promise.all([
+    db.eventInfo.findUnique({ where: { id: 1 }, select: { groupOrder: true } }),
+    db.household.findMany({ distinct: ["group"], select: { group: true } }),
+  ]);
+  if (!info) return;
+  const saved = savedGroupNames(info.groupOrder);
+  const listed = new Set(saved);
+  const join = (names: string[]) => {
+    const fresh = [...new Set(names.map((g) => g.trim()))]
+      .filter((g) => g && g !== "Ungrouped" && !listed.has(g))
+      .sort((a, b) => a.localeCompare(b));
+    for (const g of fresh) listed.add(g);
+    return fresh;
+  };
+  const added = [...join(rows.map((r) => r.group)), ...join(extra)];
+  if (added.length === 0) return;
+  await db.eventInfo.update({
+    where: { id: 1 },
+    data: { groupOrder: JSON.stringify([...saved, ...added]) },
+  });
+}
+
+/** Create a group. It is saved straight away, empty — ready to take
+ *  invitations on the Guests screen and a table on the Seating screen. */
+export async function createGroup(name: string) {
+  const session = await requireAdminAction();
+  const group = name.trim();
+  if (!group) throw new Error("Give the group a name");
+  if (group.toLowerCase() === "ungrouped") throw new Error("“Ungrouped” is already taken");
+  const [info, rows] = await Promise.all([
+    db.eventInfo.findUnique({ where: { id: 1 }, select: { groupOrder: true } }),
+    db.household.findMany({ distinct: ["group"], select: { group: true } }),
+  ]);
+  const existing = [...savedGroupNames(info?.groupOrder ?? ""), ...rows.map((r) => r.group)];
+  if (existing.some((g) => g.toLowerCase() === group.toLowerCase())) {
+    throw new Error(`The group “${group}” already exists`);
+  }
+  await registerGroups([group]);
+  await logAction(session.name, `created group ${group}`);
   refresh();
 }
 
@@ -259,6 +316,8 @@ export async function renameGroup(from: string, to: string) {
   const session = await requireAdminAction();
   const target = to.trim();
   if (!target) throw new Error("Group name cannot be empty");
+  // So the old name is in the saved list and the rename below carries it over.
+  await registerGroups();
   await db.household.updateMany({
     where: { group: from },
     data: { group: target },
@@ -314,7 +373,8 @@ async function editGroupOrder(change: (order: string[]) => string[]) {
     if (!Array.isArray(order)) return;
     await db.eventInfo.update({
       where: { id: 1 },
-      data: { groupOrder: JSON.stringify(change(order)) },
+      // De-duplicated: renaming one group onto another merges their entries.
+      data: { groupOrder: JSON.stringify([...new Set(change(order))]) },
     });
   } catch {
     // A malformed saved order is ignored rather than breaking group edits.

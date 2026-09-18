@@ -8,17 +8,34 @@ import { db } from "./db";
 // fingerprinted and compared with the stored one — if it changed, the
 // revision goes up by one. Nobody has to remember to bump anything.
 
-/** Named groups in the family's saved box order; unknown ones follow A→Z.
- *  ("Ungrouped" is handled by the caller — it is always last.) */
-export function orderGroupNames(names: string[], savedJson: string): string[] {
-  let saved: string[] = [];
+/**
+ * The saved list of group names (EventInfo.groupOrder). It is the family's
+ * box order AND the register of which groups exist: a group named here
+ * exists even with no invitations in it yet, so creating a group saves it,
+ * and a group never vanishes just because its last invitation left — only
+ * deleting it removes it.
+ */
+export function savedGroupNames(savedJson: string): string[] {
   try {
     const parsed = JSON.parse(savedJson);
-    if (Array.isArray(parsed)) saved = parsed.filter((g) => typeof g === "string");
-  } catch {}
-  const known = new Set(names);
-  const first = saved.filter((g) => known.has(g));
-  const rest = names.filter((g) => !first.includes(g)).sort((a, b) => a.localeCompare(b));
+    if (!Array.isArray(parsed)) return [];
+    const names = parsed.filter(
+      (g): g is string => typeof g === "string" && g.trim() !== "" && g !== "Ungrouped"
+    );
+    return [...new Set(names)];
+  } catch {
+    return [];
+  }
+}
+
+/** Every group, in the family's saved box order; `names` (groups found on
+ *  invitations or holding a table) that are not in the saved list follow
+ *  A→Z. ("Ungrouped" is handled by the caller — it is always last.) */
+export function orderGroupNames(names: string[], savedJson: string): string[] {
+  const first = savedGroupNames(savedJson);
+  const rest = [...new Set(names)]
+    .filter((g) => g !== "Ungrouped" && !first.includes(g))
+    .sort((a, b) => a.localeCompare(b));
   return [...first, ...rest];
 }
 

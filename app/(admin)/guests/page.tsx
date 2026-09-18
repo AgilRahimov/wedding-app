@@ -27,8 +27,10 @@ export default async function GuestsPage() {
 
   // The grouping plan's revision — same calculation the print report uses, so
   // the number on this screen always matches what a fresh printout would say.
+  // Every group: the saved list (which includes empty ones), plus any found
+  // on an invitation or holding a table.
   const named = orderGroupNames(
-    [...new Set(households.map((h) => h.group))].filter((g) => g !== "Ungrouped"),
+    [...households.map((h) => h.group), ...tableByGroup.keys()],
     eventInfo?.groupOrder ?? ""
   );
   const ordered = households.some((h) => h.group === "Ungrouped")

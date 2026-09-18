@@ -350,7 +350,7 @@ export function GroupsBoard({
               {g === "Ungrouped"
                 ? "Nobody here — every party has a group."
                 : total === 0
-                  ? "New group — tick parties anywhere and use “Move to group” to fill it."
+                  ? "Empty group — use “+ Add party” below, or tick parties anywhere and “Move to group”."
                   : "No parties match the current search or filters."}
             </li>
           )}

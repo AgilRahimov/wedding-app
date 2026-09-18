@@ -114,6 +114,10 @@ export function TableGlyph({
     fill = "#ecfdf5"; stroke = "#34d399"; num = "#065f46"; sub = "#047857";
   } else if (t.seated > 0) {
     fill = "#ffffff"; stroke = "#a8a29e"; num = "#44403c"; sub = "#78716c";
+  } else if (t.groupName) {
+    // Reserved: a group holds this table but has nobody in it yet — a firm
+    // outline, so it cannot be mistaken for a free table.
+    fill = "#f5f5f4"; stroke = "#78716c"; num = "#44403c"; sub = "#57534e";
   } else {
     fill = "#fafaf9"; stroke = "#d6d3d1"; num = "#a8a29e"; sub = "#a8a29e";
     dashed = true;

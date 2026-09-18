@@ -10,6 +10,8 @@ export const dynamic = "force-dynamic";
 // "groom", all bride's → "bride", nothing filled in → null, and anything
 // else (both sides together, or some invitations left blank) → "mixed".
 function sideOfGroup(list: { side: string | null }[]): TableSide {
+  // An empty group has no side yet — it takes one with its first invitation.
+  if (list.length === 0) return null;
   const kinds = new Set(
     list.map((h) => {
       const s = (h.side ?? "").toLowerCase();
@@ -40,8 +42,10 @@ export default async function SeatingPage() {
     list.push(h);
     byGroup.set(h.group, list);
   }
+  // Every group — the saved list includes empty ones, which can hold a table
+  // (reserved) before any invitation is in them.
   const orderedNames = orderGroupNames(
-    [...byGroup.keys()].filter((g) => g !== "Ungrouped"),
+    [...byGroup.keys(), ...tables.flatMap((t) => (t.groupName ? [t.groupName] : []))],
     info.groupOrder
   );
 

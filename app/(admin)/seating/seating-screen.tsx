@@ -269,6 +269,10 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
               Over capacity
             </span>
             <span className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-full border border-stone-500 bg-stone-100" />
+              Reserved — group still empty
+            </span>
+            <span className="flex items-center gap-1.5">
               <span className="h-3 w-3 rounded-full border border-dashed border-stone-300 bg-stone-50" />
               Free
             </span>

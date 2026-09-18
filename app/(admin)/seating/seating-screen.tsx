@@ -178,6 +178,9 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
             tables · {data.tables.length} tables, {totalSeats} seats
           </p>
         </div>
+        {/* Changing the floor plan is the owner's alone; the server refuses
+            these for anyone else too. */}
+        {data.isOwner && (
         <div className="flex flex-wrap gap-2">
           <button
             className={editLayout ? btnPrimary : btnGhost}
@@ -192,6 +195,7 @@ export function SeatingScreen({ data }: { data: SeatingData }) {
             + Add table
           </button>
         </div>
+        )}
       </div>
 
       {shortOfSeats > 0 && (

@@ -48,10 +48,15 @@ export async function freeTable(tableId: string) {
 
 const SHAPES = ["round", "half", "oval", "long"];
 
+// The floor plan itself — adding, moving, rotating, deleting tables — is the
+// owner's alone, and every one of those actions refuses anyone else on the
+// server, whatever their screen shows. The rest of the family decides who
+// sits where (and may squeeze in a chair), nothing more.
+
 /** Add a table to the plan. Tables carry numbers, not names, so a new one
  *  simply takes the next number — there is nothing to type or get wrong. */
 export async function addTable(capacity: number, shape: string) {
-  const session = await requireAdminAction();
+  const session = await requireOwnerAction();
   const existing = await db.seatTable.findMany({ select: { name: true } });
   const highest = existing.reduce((max, t) => {
     const n = Number(t.name.replace(/^Table\s+/i, ""));
@@ -110,7 +115,7 @@ export async function rotateTable(tableId: string) {
 
 /** Save a table's position after it has been dragged around the plan. */
 export async function moveTable(tableId: string, x: number, y: number) {
-  await requireAdminAction();
+  await requireOwnerAction();
   await db.seatTable.update({
     where: { id: tableId },
     data: { x, y },

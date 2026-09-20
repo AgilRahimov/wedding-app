@@ -5,6 +5,17 @@ test("a guest can RSVP through their invite link and the family sees it", async 
   const f = fixtures();
 
   await page.goto(`/invite/${f.token}`);
+
+  // first visit: the sealed envelope covers the page until opened or skipped
+  const intro = page.getByRole("dialog", { name: "Your invitation" });
+  await expect(intro.getByRole("button", { name: "Open the invitation" })).toBeVisible();
+  await intro.getByRole("button", { name: "Skip" }).click();
+  await expect(intro).toHaveCount(0);
+  // …and it is remembered: a second visit goes straight to the page
+  await page.reload();
+  await expect(intro).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Watch the invitation again" })).toBeVisible();
+
   await expect(page.getByText(`Dear ${f.partyName}`)).toBeVisible();
   // their programme is on the page (everyone starts on Group B's timetable)
   await expect(page.getByText("Straight to Buta Palace")).toBeVisible();

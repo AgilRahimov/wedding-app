@@ -1,9 +1,11 @@
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { VenueMap } from "@/components/venue-map";
 import { Ornament } from "../../ornament";
 import { rsvpIsClosed } from "./deadline";
+import { InvitationIntro } from "./invitation-intro";
 import { RsvpForm } from "./rsvp-form";
 
 export const dynamic = "force-dynamic";
@@ -71,6 +73,10 @@ export default async function InvitePage({
     db.eventInfo.findUniqueOrThrow({ where: { id: 1 } }),
     db.seatTable.findMany({ orderBy: { sortOrder: "asc" } }),
   ]);
+
+  // The invitation film plays once per guest; a cookie remembers it (set by
+  // InvitationIntro when the film ends or is skipped).
+  const introSeen = (await cookies()).has("invitation_seen");
 
   const closed = rsvpIsClosed(info.rsvpDeadline);
   const programme = household.programme;
@@ -317,6 +323,7 @@ export default async function InvitePage({
         >
           Wedding home
         </a>
+        <InvitationIntro alreadySeen={introSeen} />
       </footer>
     </main>
   );

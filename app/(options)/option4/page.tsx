@@ -3,6 +3,7 @@ import { EB_Garamond, Great_Vibes } from "next/font/google";
 import { Ornament } from "../../(site)/ornament";
 import { loadHome } from "../home-data";
 import { InviteCodeForm } from "../invite-code-form";
+import { AmbientAudio } from "./ambient-audio";
 import { Reveal } from "./reveal";
 import { TickingCountdown } from "./ticking-countdown";
 
@@ -47,25 +48,17 @@ const PALETTE = `
   @keyframes opt4-drift { from { transform: scale(1.1) } to { transform: scale(1) } }
   @keyframes opt4-nudge { 0%,100% { transform: translateY(0) } 50% { transform: translateY(6px) } }
   @keyframes opt4-glow { 0%,100% { opacity: .25 } 50% { opacity: .6 } }
-  @keyframes opt4-twinkle { 0%,100% { opacity: 0; transform: scale(.3) } 50% { opacity: 1; transform: scale(1) } }
   .opt4 .rise { animation: opt4-rise 1.4s ease-out both }
   .opt4 .drift { animation: opt4-drift 14s ease-out both }
   .opt4 .nudge { animation: opt4-nudge 2.2s ease-in-out infinite }
   .opt4 .glow { animation: opt4-glow 5s ease-in-out infinite }
-  .opt4 .spark { animation: opt4-twinkle var(--t, 3s) ease-in-out var(--d, 0s) infinite }
   @media (prefers-reduced-motion: reduce) {
-    .opt4 .rise, .opt4 .drift, .opt4 .nudge, .opt4 .glow, .opt4 .spark { animation: none }
+    .opt4 .rise, .opt4 .drift, .opt4 .nudge, .opt4 .glow { animation: none }
   }
 `;
 
 const cal = { fontFamily: "var(--font-script), cursive" } as const;
 
-// Where the crystals catch the light — as % of the 9:16 picture.
-const SPARKS = [
-  [44, 22, 2.6, 0.0], [56, 24, 3.4, 0.8], [50, 27, 2.2, 1.6], [39, 26, 3.8, 0.4],
-  [61, 28, 2.9, 2.1], [47, 31, 3.1, 1.1], [53, 33, 2.4, 0.6], [43, 30, 3.6, 2.6],
-  [58, 31, 2.7, 1.9], [50, 36, 3.3, 0.2], [46, 38, 2.5, 2.9], [55, 38, 3.9, 1.4],
-] as const;
 
 function Caps({
   children,
@@ -117,6 +110,7 @@ export default async function Option4() {
   return (
     <main className={`opt4 ${script.variable} ${serif.variable} min-h-screen text-[var(--ink)]`} style={{ fontFamily: "var(--font-serif), serif" }}>
       <style>{PALETTE}</style>
+      <AmbientAudio src="/options/ambient.mp3" />
 
       {/* One column, like an invitation held in the hand; on a computer it
           sits on the table as a card. */}
@@ -126,22 +120,26 @@ export default async function Option4() {
             The film ends on this scene, so the page begins on it. */}
         <section className="relative h-[100svh] max-h-[1000px] min-h-[680px]">
           <div className="absolute inset-0 overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/options/curtains-clean.jpg" alt="" className="drift absolute inset-0 h-full w-full object-cover object-top" />
-            {/* light: a breathing glow and twinkling crystals, laid over the
-                picture at the exact spots of the chandelier */}
+            {/* The scene moves: Agil's 5-second clip played forward then
+                back, a 10-second loop whose ends meet. Silent, so phones
+                start it by themselves; the still is the fallback when one
+                refuses (Low Power Mode). */}
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              poster="/options/curtains-clean.jpg"
+              className="drift absolute inset-0 h-full w-full object-cover object-top"
+            >
+              <source src="/options/curtains-loop.mp4" type="video/mp4" />
+            </video>
+            {/* a breathing glow at the chandelier */}
             <div className="pointer-events-none absolute left-1/2 top-0 aspect-[9/16] h-full -translate-x-1/2" aria-hidden="true">
               <div
                 className="glow absolute h-[34%] w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-full"
                 style={{ left: "50%", top: "28%", background: "radial-gradient(closest-side, rgba(255,244,214,0.9), rgba(255,236,190,0.35) 45%, transparent 70%)", filter: "blur(6px)" }}
               />
-              {SPARKS.map(([x, y, t, d], i) => (
-                <span
-                  key={i}
-                  className="spark absolute h-[7px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
-                  style={{ left: `${x}%`, top: `${y}%`, ["--t" as string]: `${t}s`, ["--d" as string]: `${d}s`, boxShadow: "0 0 8px 2px rgba(255,250,230,0.9)" }}
-                />
-              ))}
             </div>
           </div>
           <div className="relative flex h-full flex-col items-center justify-end px-10 pb-[7svh] text-center">

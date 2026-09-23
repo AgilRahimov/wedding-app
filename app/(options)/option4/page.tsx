@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { EB_Garamond, Pinyon_Script } from "next/font/google";
+import { EB_Garamond, Great_Vibes } from "next/font/google";
 import { Ornament } from "../../(site)/ornament";
 import { loadHome } from "../home-data";
 import { InviteCodeForm } from "../invite-code-form";
@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: "Option 4 · Majestic" };
 // gentle movement. Pictures are the invitation film's watercolours for now;
 // more section illustrations can be generated to match (see the prompts).
 
-const script = Pinyon_Script({ subsets: ["latin"], weight: "400", variable: "--font-script" });
+const script = Great_Vibes({ subsets: ["latin"], weight: "400", variable: "--font-script" });
 const serif = EB_Garamond({
   subsets: ["latin"],
   weight: ["400", "500"],
@@ -116,19 +116,16 @@ export default async function Option4() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/options/palace.jpg" alt="Buta Palace, in watercolour" className="drift absolute inset-0 h-full w-full object-cover object-bottom" />
           <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-[var(--paper)]/50 to-transparent" />
-          <div className="relative px-6 pt-[11svh] text-center text-[var(--navy)]">
-            <Caps className="rise text-[var(--navy)]/80">We are getting married</Caps>
-            <h1 className="rise mt-3 text-[64px] leading-[1.05]" style={{ ...cal, animationDelay: "0.3s" }}>
-              {h.names.split(/\s*&\s*/).map((n, i, all) => (
-                <span key={i} className="block">
-                  {n}
-                  {i < all.length - 1 && <span className="mx-auto block text-[34px] leading-tight">&amp;</span>}
-                </span>
-              ))}
+          <div className="relative px-6 pt-[12svh] text-center text-[var(--navy)]">
+            <h1 className="rise text-[62px] leading-[1.1]" style={cal}>
+              {h.names}
             </h1>
-            <Caps className="rise mt-4 text-[var(--navy)]/80" style={{ animationDelay: "0.7s" }}>
-              {info.weddingDate}
-            </Caps>
+            <p
+              className="rise mt-3 text-[20px] tracking-[0.34em] text-[var(--navy)]/85"
+              style={{ animationDelay: "0.4s" }}
+            >
+              {h.numeric || info.weddingDate}
+            </p>
           </div>
           <div className="absolute inset-x-0 bottom-6 text-center text-[var(--navy)]/70">
             <Caps className="text-[9px]">Scroll</Caps>

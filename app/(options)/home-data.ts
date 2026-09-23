@@ -45,6 +45,10 @@ export async function loadHome() {
     day: valid ? String(parsed.getDate()) : "",
     month: valid ? parsed.toLocaleDateString("en-GB", { month: "long" }) : "",
     year: valid ? String(parsed.getFullYear()) : "",
+    // 23.10.2026 — the way the date is written in Azerbaijan
+    numeric: valid
+      ? `${String(parsed.getDate()).padStart(2, "0")}.${String(parsed.getMonth() + 1).padStart(2, "0")}.${parsed.getFullYear()}`
+      : "",
     // the default evening, as a taste of the night — each guest's own page
     // shows the programme that actually applies to them
     evening: programmes.find((p) => p.isDefault) ?? programmes[0] ?? null,

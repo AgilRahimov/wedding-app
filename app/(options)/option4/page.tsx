@@ -179,13 +179,11 @@ export default async function Option4() {
         {/* ── Location ───────────────────────────────────────────────── */}
         <section className="px-7 py-20">
           <Title script="Location" caps="Where we celebrate" />
-          <Reveal delay={150} className="mx-auto mt-10 max-w-[340px]">
-            <div className="rounded-t-full border border-[var(--gold)]/60 p-2">
-              <div className="rounded-t-full border border-[var(--gold)]/30 p-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/options/doors.jpg" alt="The carved doors of Buta Palace" className="block aspect-[4/5] w-full rounded-t-full object-cover object-[50%_65%]" />
-              </div>
-            </div>
+          <Reveal delay={150} className="mx-auto mt-8 max-w-[360px]">
+            {/* the palace in its gilded arch; the picture's plain background
+                multiplies away into the paper */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/options/palace-framed.jpg" alt="Buta Palace, in a gilded arch" className="block w-full mix-blend-multiply" />
           </Reveal>
           <Reveal className="mt-8 text-center">
             <p className="text-[15px] uppercase tracking-[0.3em] text-[var(--navy)]">{info.venueName}</p>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
+import { weddingStartIso } from "@/lib/wedding-time";
 import { Countdown } from "./countdown";
 import { InviteCodeForm } from "./invite-code-form";
 import { Ornament } from "./ornament";
@@ -58,12 +59,7 @@ export default async function HomePage() {
     }),
   ]);
 
-  const parsed = new Date(info.weddingDate);
-  const isoDate = Number.isNaN(parsed.getTime())
-    ? null
-    : new Date(
-        `${parsed.toDateString()} ${info.ceremonyTime || "19:00"}`
-      ).toISOString();
+  const isoDate = weddingStartIso(info.weddingDate, info.ceremonyTime);
 
   // The homepage shows the default evening as a taste of the night; each guest's
   // own page shows the programme that actually applies to them.

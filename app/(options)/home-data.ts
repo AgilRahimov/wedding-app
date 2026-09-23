@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { weddingStartIso } from "@/lib/wedding-time";
 
 // Everything a homepage design shows, read once — so each design option is
 // only about looks, and they all show the same real wedding details.
@@ -39,9 +40,7 @@ export async function loadHome() {
   return {
     info,
     names: info.coupleNames || "Our Wedding",
-    isoDate: valid
-      ? new Date(`${parsed.toDateString()} ${info.ceremonyTime || "19:00"}`).toISOString()
-      : null,
+    isoDate: weddingStartIso(info.weddingDate, info.ceremonyTime),
     weekday: valid ? parsed.toLocaleDateString("en-GB", { weekday: "long" }) : "",
     day: valid ? String(parsed.getDate()) : "",
     month: valid ? parsed.toLocaleDateString("en-GB", { month: "long" }) : "",

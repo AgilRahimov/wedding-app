@@ -60,6 +60,16 @@ const PALETTE = `
 const cal = { fontFamily: "var(--font-script), cursive" } as const;
 
 
+/** A section's illustration: its plain background multiplies away into the paper. */
+function Art({ src, alt, className = "" }: { src: string; alt: string; className?: string }) {
+  return (
+    <Reveal className={`mx-auto ${className}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={alt} className="block w-full mix-blend-multiply" />
+    </Reveal>
+  );
+}
+
 function Caps({
   children,
   className = "",
@@ -168,8 +178,9 @@ export default async function Option4() {
 
         {/* ── Countdown ──────────────────────────────────────────────── */}
         {h.isoDate && (
-          <section className="bg-[var(--navy)] px-6 py-16 text-center text-[#f3ead8]">
-            <Title script="Countdown" caps={`Until ${info.weddingDate}`} light />
+          <section className="px-7 pb-20 pt-14 text-center text-[var(--navy)]">
+            <Art src="/options/watch.jpg" alt="" className="-mb-4 max-w-[240px]" />
+            <Title script="Countdown" caps={`Until ${info.weddingDate}`} />
             <Reveal delay={150} className="mt-9">
               <TickingCountdown isoDate={h.isoDate} />
             </Reveal>
@@ -233,7 +244,8 @@ export default async function Option4() {
         {/* ── Dress code ─────────────────────────────────────────────── */}
         <section className="px-7 pb-20">
           <Title script="Dress Code" caps="A few gentle reminders" />
-          <Reveal delay={150} className="mt-10 rounded-3xl bg-[var(--card)] px-8 py-10 text-center shadow-[0_20px_50px_-30px_rgba(59,51,40,0.4)]">
+          <Art src="/options/guests.jpg" alt="Guests dancing in evening dress" className="mt-6 max-w-[420px]" />
+          <Reveal delay={150} className="mt-2 rounded-3xl bg-[var(--card)] px-8 py-10 text-center shadow-[0_20px_50px_-30px_rgba(59,51,40,0.4)]">
             <p className="text-[28px]">{info.dressCode || "Formal attire"}</p>
             <p className="mt-3 text-[17px] leading-relaxed text-[var(--muted)]">
               We kindly ask you to dress for an evening at the palace.
@@ -247,7 +259,8 @@ export default async function Option4() {
         {/* ── Travel ─────────────────────────────────────────────────── */}
         <section className="border-t border-[var(--line)] px-7 py-20">
           <Title script="Travel" caps="For our guests from abroad" />
-          <div className="mt-10 text-center">
+          <Art src="/options/baku.jpg" alt="Baku: the Flame Towers, the Maiden Tower and the seafront" className="mt-6 max-w-[440px]" />
+          <div className="mt-6 text-center">
             {h.travel.map((c, i) => (
               <Reveal key={c.head} className={i > 0 ? "mt-10" : ""}>
                 <p className="text-[24px]">{c.head}</p>
@@ -274,19 +287,20 @@ export default async function Option4() {
 
         {/* ── RSVP: find your invitation ─────────────────────────────── */}
         <section
-          className="bg-[var(--navy)] px-7 py-20 text-center text-[#f3ead8]"
+          className="border-t border-[var(--line)] px-7 py-20 text-center"
           style={{
-            ["--field-bg" as string]: "rgba(255,255,255,0.07)",
-            ["--field-border" as string]: "rgba(220,194,143,0.4)",
-            ["--field-text" as string]: "#f3ead8",
-            ["--field-placeholder" as string]: "rgba(243,234,216,0.45)",
-            ["--btn-bg" as string]: "#dcc28f",
-            ["--btn-text" as string]: "#161d4a",
+            ["--field-bg" as string]: "rgba(255,255,255,0.6)",
+            ["--field-border" as string]: "rgba(59,51,40,0.25)",
+            ["--field-text" as string]: "#3b3328",
+            ["--field-placeholder" as string]: "rgba(59,51,40,0.4)",
+            ["--btn-bg" as string]: "#161d4a",
+            ["--btn-text" as string]: "#f3ead8",
           }}
         >
-          <Title script="RSVP" caps="We hope you can make it" light />
+          <Title script="RSVP" caps="We hope you can make it" />
+          <Art src="/options/envelope.jpg" alt="An envelope sealed with the couple's monogram" className="-mb-2 mt-4 max-w-[300px]" />
           <Reveal delay={150}>
-            <p className="mx-auto mt-6 max-w-sm text-[17px] leading-relaxed text-white/70">
+            <p className="mx-auto max-w-sm text-[17px] leading-relaxed text-[var(--muted)]">
               Every family has a personal invitation with its own timetable, table and reply
               card. We sent yours by WhatsApp — open that link, or paste it here.
             </p>

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { EB_Garamond, Great_Vibes } from "next/font/google";
+import { Alex_Brush, EB_Garamond } from "next/font/google";
 import { Ornament } from "../../(site)/ornament";
 import { loadHome } from "../home-data";
 import { InviteCodeForm } from "../invite-code-form";
@@ -18,7 +18,7 @@ export const metadata: Metadata = { title: "Option 4 · Majestic" };
 // gentle movement. Pictures are the invitation film's watercolours for now;
 // more section illustrations can be generated to match (see the prompts).
 
-const script = Great_Vibes({ subsets: ["latin"], weight: "400", variable: "--font-script" });
+const script = Alex_Brush({ subsets: ["latin"], weight: "400", variable: "--font-script" });
 const serif = EB_Garamond({
   subsets: ["latin"],
   weight: ["400", "500"],
@@ -144,7 +144,7 @@ export default async function Option4() {
           </div>
           <div className="relative flex h-full flex-col items-center justify-end px-10 pb-[7svh] text-center">
             <Caps className="rise text-[var(--muted)]">Together with their families</Caps>
-            <h1 className="rise mt-3 text-[58px] leading-[1.1] text-[var(--gold-deep)]" style={{ ...cal, animationDelay: "0.3s" }}>
+            <h1 className="rise mt-3 whitespace-nowrap text-[clamp(44px,15vw,64px)] leading-[1.1] text-[var(--gold-deep)]" style={{ ...cal, animationDelay: "0.3s" }}>
               {h.names}
             </h1>
             <p className="rise mx-auto mt-3 max-w-[270px] text-[17px] italic leading-snug" style={{ animationDelay: "0.6s" }}>

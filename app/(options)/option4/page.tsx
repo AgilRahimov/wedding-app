@@ -46,15 +46,26 @@ const PALETTE = `
   @keyframes opt4-rise { from { opacity: 0; transform: translateY(18px) } to { opacity: 1; transform: none } }
   @keyframes opt4-drift { from { transform: scale(1.1) } to { transform: scale(1) } }
   @keyframes opt4-nudge { 0%,100% { transform: translateY(0) } 50% { transform: translateY(6px) } }
+  @keyframes opt4-glow { 0%,100% { opacity: .25 } 50% { opacity: .6 } }
+  @keyframes opt4-twinkle { 0%,100% { opacity: 0; transform: scale(.3) } 50% { opacity: 1; transform: scale(1) } }
   .opt4 .rise { animation: opt4-rise 1.4s ease-out both }
   .opt4 .drift { animation: opt4-drift 14s ease-out both }
   .opt4 .nudge { animation: opt4-nudge 2.2s ease-in-out infinite }
+  .opt4 .glow { animation: opt4-glow 5s ease-in-out infinite }
+  .opt4 .spark { animation: opt4-twinkle var(--t, 3s) ease-in-out var(--d, 0s) infinite }
   @media (prefers-reduced-motion: reduce) {
-    .opt4 .rise, .opt4 .drift, .opt4 .nudge { animation: none }
+    .opt4 .rise, .opt4 .drift, .opt4 .nudge, .opt4 .glow, .opt4 .spark { animation: none }
   }
 `;
 
 const cal = { fontFamily: "var(--font-script), cursive" } as const;
+
+// Where the crystals catch the light — as % of the 9:16 picture.
+const SPARKS = [
+  [44, 22, 2.6, 0.0], [56, 24, 3.4, 0.8], [50, 27, 2.2, 1.6], [39, 26, 3.8, 0.4],
+  [61, 28, 2.9, 2.1], [47, 31, 3.1, 1.1], [53, 33, 2.4, 0.6], [43, 30, 3.6, 2.6],
+  [58, 31, 2.7, 1.9], [50, 36, 3.3, 0.2], [46, 38, 2.5, 2.9], [55, 38, 3.9, 1.4],
+] as const;
 
 function Caps({
   children,
@@ -111,52 +122,49 @@ export default async function Option4() {
           sits on the table as a card. */}
       <div className="paper mx-auto max-w-[520px] overflow-hidden sm:my-8 sm:rounded-sm sm:shadow-[0_30px_80px_-30px_rgba(59,51,40,0.45)]">
 
-        {/* ── The painted scene ───────────────────────────────────────── */}
-        <section className="relative h-[100svh] max-h-[1000px] min-h-[640px] overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/options/palace.jpg" alt="Buta Palace, in watercolour" className="drift absolute inset-0 h-full w-full object-cover object-bottom" />
-          <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-[var(--paper)]/50 to-transparent" />
-          <div className="relative px-6 pt-[12svh] text-center text-[var(--navy)]">
-            <h1 className="rise text-[62px] leading-[1.1]" style={cal}>
+        {/* ── The curtains, the chandelier, the invitation ───────────
+            The film ends on this scene, so the page begins on it. */}
+        <section className="relative h-[100svh] max-h-[1000px] min-h-[680px]">
+          <div className="absolute inset-0 overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/options/curtains-clean.jpg" alt="" className="drift absolute inset-0 h-full w-full object-cover object-top" />
+            {/* light: a breathing glow and twinkling crystals, laid over the
+                picture at the exact spots of the chandelier */}
+            <div className="pointer-events-none absolute left-1/2 top-0 aspect-[9/16] h-full -translate-x-1/2" aria-hidden="true">
+              <div
+                className="glow absolute h-[34%] w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-full"
+                style={{ left: "50%", top: "28%", background: "radial-gradient(closest-side, rgba(255,244,214,0.9), rgba(255,236,190,0.35) 45%, transparent 70%)", filter: "blur(6px)" }}
+              />
+              {SPARKS.map(([x, y, t, d], i) => (
+                <span
+                  key={i}
+                  className="spark absolute h-[7px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
+                  style={{ left: `${x}%`, top: `${y}%`, ["--t" as string]: `${t}s`, ["--d" as string]: `${d}s`, boxShadow: "0 0 8px 2px rgba(255,250,230,0.9)" }}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="relative flex h-full flex-col items-center justify-end px-10 pb-[7svh] text-center">
+            <Caps className="rise text-[var(--muted)]">Together with their families</Caps>
+            <h1 className="rise mt-3 text-[58px] leading-[1.1] text-[var(--gold-deep)]" style={{ ...cal, animationDelay: "0.3s" }}>
               {h.names}
             </h1>
-            <p
-              className="rise mt-3 text-[20px] tracking-[0.34em] text-[var(--navy)]/85"
-              style={{ animationDelay: "0.4s" }}
-            >
-              {h.numeric || info.weddingDate}
+            <p className="rise mx-auto mt-3 max-w-[270px] text-[17px] italic leading-snug" style={{ animationDelay: "0.6s" }}>
+              request the pleasure of your company at the celebration of their marriage
             </p>
-          </div>
-          <div className="absolute inset-x-0 bottom-6 text-center text-[var(--navy)]/70">
-            <Caps className="text-[9px]">Scroll</Caps>
-            <div className="nudge mx-auto mt-1 h-6 w-px bg-current" />
-          </div>
-        </section>
-
-        {/* ── The invitation itself, framed by the curtains ─────────── */}
-        <section className="relative overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/options/curtains-clean.jpg" alt="" className="absolute inset-0 h-full w-full object-cover object-top" />
-          <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-[var(--paper)] to-transparent" />
-          <div className="relative px-10 pb-24 pt-[60%] text-center">
-            <Reveal>
-              <Caps className="text-[var(--muted)]">Together with their families</Caps>
-              <p className="mt-4 text-[54px] leading-[1.1] text-[var(--gold-deep)]" style={cal}>{h.names}</p>
-              <p className="mx-auto mt-4 max-w-[260px] text-[18px] italic leading-snug">
-                request the pleasure of your company at the celebration of their marriage
-              </p>
-            </Reveal>
-            <Reveal delay={150} className="mt-9">
-              <div className="flex items-center justify-center gap-3">
-                <span className="w-20 border-y border-[var(--line)] py-2 text-[11px] uppercase tracking-[0.28em]">{h.month}</span>
-                <span className="text-[60px] leading-none text-[var(--navy)]">{h.day}</span>
-                <span className="w-20 border-y border-[var(--line)] py-2 text-[11px] uppercase tracking-[0.28em]">{h.year}</span>
-              </div>
-              <Caps className="mt-3 text-[var(--muted)]">{h.weekday}</Caps>
-              {info.ceremonyTime && <p className="mt-5 text-[17px] italic">at {info.ceremonyTime} in the evening</p>}
-              <p className="mt-5 text-[40px] leading-none text-[var(--gold-deep)]" style={cal}>{info.venueName}</p>
-              <Caps className="mt-3 text-[var(--muted)]">Baku, Azerbaijan</Caps>
-            </Reveal>
+            <div className="rise mt-7 flex items-center justify-center gap-3" style={{ animationDelay: "0.9s" }}>
+              <span className="w-20 border-y border-[var(--line)] py-2 text-[11px] uppercase tracking-[0.28em]">{h.month}</span>
+              <span className="text-[58px] leading-none text-[var(--navy)]">{h.day}</span>
+              <span className="w-20 border-y border-[var(--line)] py-2 text-[11px] uppercase tracking-[0.28em]">{h.year}</span>
+            </div>
+            <Caps className="rise mt-2 text-[var(--muted)]" style={{ animationDelay: "1.1s" }}>
+              {h.weekday}{info.ceremonyTime ? ` · ${info.ceremonyTime}` : ""}
+            </Caps>
+            <p className="rise mt-5 text-[36px] leading-none text-[var(--gold-deep)]" style={{ ...cal, animationDelay: "1.3s" }}>
+              {info.venueName}
+            </p>
+            <Caps className="rise mt-2 text-[var(--muted)]" style={{ animationDelay: "1.4s" }}>Baku, Azerbaijan</Caps>
+            <div className="nudge mt-6 h-6 w-px bg-[var(--muted)]/60" aria-hidden="true" />
           </div>
         </section>
 

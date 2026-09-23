@@ -133,32 +133,28 @@ export default async function Option4() {
           </div>
         </section>
 
-        {/* ── The invitation itself ──────────────────────────────────── */}
-        <section className="relative pb-20">
-          <div className="relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/options/curtains.jpg" alt="" className="block w-full" />
-            <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[var(--paper)] to-transparent" />
-            {/* the picture melts into the paper instead of ending in an edge */}
-            <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[var(--paper)] via-[var(--paper)]/60 to-transparent" />
-          </div>
-          <div className="relative -mt-4 px-8 text-center">
+        {/* ── The invitation itself, framed by the curtains ─────────── */}
+        <section className="relative overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/options/curtains-clean.jpg" alt="" className="absolute inset-0 h-full w-full object-cover object-top" />
+          <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-[var(--paper)] to-transparent" />
+          <div className="relative px-10 pb-24 pt-[60%] text-center">
             <Reveal>
               <Caps className="text-[var(--muted)]">Together with their families</Caps>
-              <p className="mt-4 text-[52px] leading-[1.1] text-[var(--gold-deep)]" style={cal}>{h.names}</p>
-              <p className="mx-auto mt-4 max-w-xs text-[19px] italic leading-snug">
+              <p className="mt-4 text-[54px] leading-[1.1] text-[var(--gold-deep)]" style={cal}>{h.names}</p>
+              <p className="mx-auto mt-4 max-w-[260px] text-[18px] italic leading-snug">
                 request the pleasure of your company at the celebration of their marriage
               </p>
             </Reveal>
-            <Reveal delay={150} className="mt-10">
-              <div className="flex items-center justify-center gap-4">
-                <span className="w-24 border-y border-[var(--line)] py-2 text-[12px] uppercase tracking-[0.3em]">{h.month}</span>
-                <span className="text-[64px] leading-none text-[var(--navy)]">{h.day}</span>
-                <span className="w-24 border-y border-[var(--line)] py-2 text-[12px] uppercase tracking-[0.3em]">{h.year}</span>
+            <Reveal delay={150} className="mt-9">
+              <div className="flex items-center justify-center gap-3">
+                <span className="w-20 border-y border-[var(--line)] py-2 text-[11px] uppercase tracking-[0.28em]">{h.month}</span>
+                <span className="text-[60px] leading-none text-[var(--navy)]">{h.day}</span>
+                <span className="w-20 border-y border-[var(--line)] py-2 text-[11px] uppercase tracking-[0.28em]">{h.year}</span>
               </div>
               <Caps className="mt-3 text-[var(--muted)]">{h.weekday}</Caps>
-              {info.ceremonyTime && <p className="mt-6 text-[17px] italic">at {info.ceremonyTime} in the evening</p>}
-              <p className="mt-6 text-[40px] leading-none text-[var(--gold-deep)]" style={cal}>{info.venueName}</p>
+              {info.ceremonyTime && <p className="mt-5 text-[17px] italic">at {info.ceremonyTime} in the evening</p>}
+              <p className="mt-5 text-[40px] leading-none text-[var(--gold-deep)]" style={cal}>{info.venueName}</p>
               <Caps className="mt-3 text-[var(--muted)]">Baku, Azerbaijan</Caps>
             </Reveal>
           </div>
@@ -305,12 +301,13 @@ export default async function Option4() {
             <Caps className="mt-2 text-[var(--muted)]">{info.weddingDate}</Caps>
             {info.contactPhone && <p className="mt-4 text-[15px] italic text-[var(--muted)]">Any questions? Call us on {info.contactPhone}</p>}
           </Reveal>
-          <div className="relative mt-10 h-72 overflow-hidden">
+          {/* the palace again, now at night — the evening has come */}
+          <div className="relative mt-10">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/options/palace.jpg" alt="" className="absolute inset-x-0 bottom-0 w-full" />
-            <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[var(--paper)] to-transparent" />
+            <img src="/options/palace-night.jpg" alt="Buta Palace at night" className="block w-full" />
+            <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[var(--paper)] to-transparent" />
           </div>
-          <a href="/dashboard" className="block pb-6 pt-2 text-[10px] uppercase tracking-[0.3em] text-[var(--muted)]/60">
+          <a href="/dashboard" className="block bg-[#0e1340] pb-6 pt-4 text-[10px] uppercase tracking-[0.3em] text-white/30">
             Family sign-in
           </a>
         </footer>

@@ -45,7 +45,7 @@ This app replaces `Spisok v2.xlsx`.
 
 ## The live site
 
-**https://wedding-app-mu-ten.vercel.app** — the public site guests see. It stores its
+**https://agilsamra.com** (also wedding-app-mu-ten.vercel.app) — the public site guests see. It stores its
 data in the production database (Neon Postgres, Frankfurt). Every `git push` deploys
 the latest code to it automatically, applying any database migrations on the way —
 deploys never touch the data.

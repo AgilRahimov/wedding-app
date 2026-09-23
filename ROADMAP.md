@@ -39,10 +39,11 @@ edits in one place and the guest's page updates instantly.
 | 1 | Guest list + RSVP: dashboard, guests screen, settings, invite links | ✅ done 8 Aug |
 | 2 | Programmes (per-group day plans A/B/C), seating floor plan, public homepage | ✅ done 17–23 Aug |
 | 2.5 | Hardening: git + GitHub, 10-test smoke suite, refactor, moved out of iCloud | ✅ done 23 Aug |
-| 3 | Deployment — live at wedding-app-mu-ten.vercel.app (Vercel + Neon Postgres, both in Frankfurt); deploys automatically on every `git push` | ✅ done 28 Aug |
+| 3 | Deployment — live at agilsamra.com (Vercel + Neon Postgres, both in Frankfurt); deploys automatically on every `git push` | ✅ done 28 Aug |
 | 3.5 | Real Buta Palace floor plan: the venue's actual 40-table room (504 seats) drawn as an interactive map with per-seat dots, party-first seating queue, squeeze-in extra chairs, zoom/pan for iPads | ✅ done 28 Aug |
 | 4 | **Travel/hotels module** — hotel list, room assignments, arrivals/departures board, transfer grouping; feeds Group C invitations | 🔜 next build |
 | 5 | Activities — trips for out-of-town guests, sign-up via invite link | ⏳ after travel |
+| 6 | **Guest photo uploads** at agilsamra.com/photos — the QR code on the tables points here (printed 23 Sep). Placeholder page live; upload, storage (Vercel Blob or similar), family Photos screen and a live slideshow still to decide and build | 🔜 placeholder only |
 
 ## Family to-do (the app is waiting on these)
 
